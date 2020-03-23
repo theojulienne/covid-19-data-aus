@@ -9,7 +9,7 @@ on:
     # Every hour *not* on the hour (to save NSW Health's poor servers)
     # (Run at 55 minutes past so that the follow-on cron job in the main repo
     # has access to fairly fresh data)
-     - cron:  '55 * * * *'
+     - cron:  '44 * * * *'
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -22,6 +22,9 @@ jobs:
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
+
+    - name: pip install dependencies
+      run: pip install -r requirements.txt
 
     # Runs a single command using the runners shell
     - name: Scrape NSW Health's website, generate JSON data
