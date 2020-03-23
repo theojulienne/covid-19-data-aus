@@ -1,12 +1,13 @@
-from bs4 import BeautifulSoup
-import requests
-import feedparser
-import sys
-import re
 import datetime
 import json
+import re
+
+import bs4
+import requests
+import feedparser
 
 def main():
+  # Parse the NSW Health media RSS feed, pulling out
   nsw_feed = feedparser.parse('https://www.health.nsw.gov.au/_layouts/feed.aspx?xsl=1&web=/news&page=4ac47e14-04a9-4016-b501-65a23280e841&wp=baabf81e-a904-44f1-8d59-5f6d56519965')
   timeseries_data = get_timeseries_data(nsw_feed)
 
@@ -60,7 +61,7 @@ def get_timeseries_data(nsw_feed):
   for entry in nsw_feed['entries']:
     if ('COVID-19' in entry['title'] or 'coronavirus' in entry['title']) and 'stat' in entry['title']:
       href = entry['links'][0]['href']
-      soup = BeautifulSoup(requests.get(href).text, 'html.parser')
+      soup = bs4.BeautifulSoup(requests.get(href).text, 'html.parser')
 
       date = datetime.datetime.strptime(soup.select_one('div.newsdate').text.strip(), '%d %B %Y')
       tables = soup.select('table.moh-rteTable-6')
