@@ -13,9 +13,27 @@ def main():
   timeseries_data = add_manual_data(timeseries_data)
 
   # Muck with the data to get it into the format that's expected
+  # Fill in the blanks
+  dates = sorted(timeseries_data.keys())
+
+  start_time = min([datetime.datetime.strptime(d, '%Y-%m-%d') for d in dates])
+  end_time = max([datetime.datetime.strptime(d, '%Y-%m-%d') for d in dates])
+
+  curr_time = start_time
+  prev_time = None
+  while curr_time <= end_time:
+    key = curr_time.strftime('%Y-%m-%d')
+
+    if key not in timeseries_data:
+      timeseries_data[key] = timeseries_data[prev_time.strftime('%Y-%m-%d')]
+
+    prev_time = curr_time
+    curr_time = curr_time + datetime.timedelta(days=1)
+
   dates = sorted(timeseries_data.keys())
   values = [timeseries_data[d] for d in dates]
 
+  # Muck with the age groups and sources data to do the right things
   age_group_data = munge_data_to_output(timeseries_data, dates, 'age_groups')
   source_data = munge_data_to_output(timeseries_data, dates, 'sources')
 
