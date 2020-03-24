@@ -26,9 +26,11 @@ jobs:
     - name: pip install dependencies
       run: pip install -r requirements.txt
 
-    # Runs a single command using the runners shell
     - name: Scrape NSW Health's website, generate JSON data
       run: python2 nsw.py
+
+    - name: Scrape VIC Health's website, generate JSON data
+      run: python2 vic.py
 
     - name: Commit files
       run: |
