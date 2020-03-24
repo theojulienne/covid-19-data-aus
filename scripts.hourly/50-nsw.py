@@ -1,3 +1,5 @@
+#!/usr/bin/env python2
+
 import collections
 import copy
 import datetime
