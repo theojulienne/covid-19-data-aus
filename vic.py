@@ -51,7 +51,7 @@ def main():
     'total': {
       'confirmed': [timeseries_data[d]['confirmed'] for d in dates],
       'tested': [timeseries_data[d]['tested'] for d in dates],
-      'hospitalized': [timeseries_data[d]['tested'] for d in dates],
+      'hospitalized': [timeseries_data[d]['hospitalized'] for d in dates],
       'recovered': [timeseries_data[d]['recovered'] for d in dates],
     },
     'age_groups': age_group_data,
