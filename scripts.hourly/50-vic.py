@@ -115,9 +115,7 @@ def get_recent_timeseries_data():
       if recovered:
         timeseries_data[date.strftime('%Y-%m-%d')]['recovered'] = recovered
     else:
-      import code
-      code.interact(local=locals())
-      raise 'Trouble parsing!', date
+      raise Exception('Trouble parsing! %s' % date)
 
   return timeseries_data
 
@@ -161,12 +159,12 @@ def add_historical_timeseries_data(timeseries_data):
     elif date <= datetime.datetime(year=2020, month=3, day=15):
       continue
     else:
-      raise 'Unparseable post!', href
+      raise Exception('Unparseable post! %s' % href)
 
   return timeseries_data
 
 def parse_fulltext_post(body):
-  m = re.match(r'.*bringing the total number of cases in Victoria to (?P<total_cases>\d+)\..*At (the )?present( time)?, there are (?P<community_contact>\w+) confirmed cases of COVID-19 in Victoria that may have been acquired through community transmission\..*Currently (?P<hospital>\w+) people are (recovering )?in hospital( .*(?P<recovered>\d+) people have recovered)?.*More than (?P<tested>[\d,]+) Victorians have been tested to date.*', body, re.MULTILINE | re.DOTALL)
+  m = re.match(r'.*total number of( coronavirus \(COVID-19\))? cases in Victoria (to|is) (?P<total_cases>\d+).*At (the )?present( time)?, there are (?P<community_contact>\w+) confirmed cases of COVID-19 in Victoria that may have been acquired through community transmission\..*Currently (?P<hospital>\w+) people are (recovering )?in hospital( .*(?P<recovered>\d+) people have recovered)?.*More than (?P<tested>[\d,]+) Victorians have been tested to date.*', body, re.MULTILINE | re.DOTALL)
   if m:
     total_cases = parse_num(m.group('total_cases'))
     community_contact = parse_num(m.group('community_contact'))
@@ -377,7 +375,7 @@ def add_manual_data(timeseries_data):
         'sources': copy.deepcopy(sources),
       }
     else:
-      raise 'Date already existed?', date
+      raise Exception('Date already existed? %s' % date)
 
   return timeseries_data
 
