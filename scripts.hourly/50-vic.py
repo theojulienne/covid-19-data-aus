@@ -5,6 +5,7 @@ import copy
 import datetime
 import json
 import re
+import os
 
 import bs4
 import requests
@@ -78,8 +79,18 @@ def get_recent_timeseries_data():
     if li.select_one('a').attrs['href'][0] != '/':
       continue
 
-    href = 'https://www.dhhs.vic.gov.au' + li.select_one('a').attrs['href']
-    release = bs4.BeautifulSoup(requests.get(href).text, 'html.parser')
+    uri = li.select_one('a').attrs['href']
+    href = 'https://www.dhhs.vic.gov.au' + uri
+    cache_filename = 'data_cache/vic/'+uri.replace('/', '_')+'.html'
+    if os.path.exists(cache_filename):
+      with open(cache_filename, 'rb') as f:
+        response_body = f.read()
+    else:
+      response_body = requests.get(href).text
+      with open(cache_filename, 'wb') as f:
+        f.write(response_body.encode('utf-8'))
+
+    release = bs4.BeautifulSoup(response_body, 'html.parser')
     layout_region = release.select_one('div.layout__region')
 
     # The date is on the second line of this div
