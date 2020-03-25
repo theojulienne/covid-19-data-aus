@@ -5,6 +5,7 @@ import copy
 import datetime
 import json
 import re
+import os
 
 import bs4
 import requests
@@ -61,7 +62,16 @@ def get_timeseries_data(url):
     # talk about COVID-19/coronavirus statistics
     if ('COVID-19' in li.text or 'coronavirus' in li.text) and 'stat' in li.text:
       href = li.select_one('a').attrs['href']
-      soup = bs4.BeautifulSoup(requests.get(href).text, 'html.parser')
+      uri = href.replace('https://www.health.nsw.gov.au/', '')
+      cache_filename = 'data_cache/nsw/'+uri.replace('/', '_')+'.html'
+      if os.path.exists(cache_filename):
+        with open(cache_filename, 'rb') as f:
+          response_body = f.read()
+      else:
+        response_body = requests.get(href).text
+        with open(cache_filename, 'wb') as f:
+          f.write(response_body.encode('utf-8'))
+      soup = bs4.BeautifulSoup(response_body, 'html.parser')
 
       date = datetime.datetime.strptime(soup.select_one('div.newsdate').text.strip(), '%d %B %Y')
       tables = soup.select('table.moh-rteTable-6')
