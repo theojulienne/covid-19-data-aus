@@ -17,3 +17,5 @@ if len(matches) == 1:
     status_file = 'data_cache/qld/status-tracing/' + parsed_date + '.html'
     with open(status_file, 'wb') as f:
         f.write(response_body.encode('utf-8'))
+else:
+    print('WARNING: No "status as at" date was found in the QLD status page, we may be missing data')
