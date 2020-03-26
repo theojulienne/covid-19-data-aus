@@ -36,8 +36,11 @@ def main():
         timeseries_data[key]['recovered'] = timeseries_data[prev_time.strftime('%Y-%m-%d')]['recovered']
       if 'hospitalized' not in timeseries_data[key]:
         timeseries_data[key]['hospitalized'] = timeseries_data[prev_time.strftime('%Y-%m-%d')]['hospitalized']
+      if 'deaths' not in timeseries_data[key]:
+        timeseries_data[key]['deaths'] = timeseries_data[prev_time.strftime('%Y-%m-%d')]['deaths']
       if 'tested' not in timeseries_data[key]:
         timeseries_data[key]['tested'] = timeseries_data[prev_time.strftime('%Y-%m-%d')]['tested']
+
 
     prev_time = curr_time
     curr_time = curr_time + datetime.timedelta(days=1)
@@ -55,6 +58,7 @@ def main():
       'confirmed': [timeseries_data[d]['confirmed'] for d in dates],
       'tested': [timeseries_data[d]['tested'] for d in dates],
       'hospitalized': [timeseries_data[d]['hospitalized'] for d in dates],
+      'deaths': [timeseries_data[d]['deaths'] for d in dates],
       'recovered': [timeseries_data[d]['recovered'] for d in dates],
     },
     'age_groups': age_group_data,
@@ -100,13 +104,14 @@ def get_recent_timeseries_data():
     date = datetime.datetime.strptime(date_text, '%d %B %Y')
     body = layout_region.select_one('div.page-content').text.strip()
 
-    total_cases, community_contact, hospital, tested, recovered = parse_fulltext_post(body)
+    total_cases, community_contact, hospital, tested, recovered, deaths = parse_fulltext_post(body)
 
     if total_cases is not None:
       timeseries_data[date.strftime('%Y-%m-%d')] = {
         'tested': tested,
         'confirmed': total_cases,
         'hospitalized': hospital,
+        'deaths': deaths,
         'sources': {
           'Locally acquired - contact not identified': community_contact,
         }
@@ -141,12 +146,13 @@ def add_historical_timeseries_data(timeseries_data):
     date = datetime.datetime.strptime(release.select_one('div.page-date').text, '%d %b %Y')
     body = release.select_one('div#main').text.strip()
 
-    total_cases, community_contact, hospital, tested, recovered = parse_fulltext_post(body)
+    total_cases, community_contact, hospital, tested, recovered, deaths = parse_fulltext_post(body)
     if total_cases is not None:
       timeseries_data[date.strftime('%Y-%m-%d')] = {
         'tested': tested,
         'confirmed': total_cases,
         'hospitalized': hospital,
+        'deaths': deaths,
         'sources': {
           'Locally acquired - contact not identified': community_contact,
         }
@@ -164,12 +170,17 @@ def add_historical_timeseries_data(timeseries_data):
   return timeseries_data
 
 def parse_fulltext_post(body):
-  m = re.match(r'.*total number of( coronavirus \(COVID-19\))? cases in Victoria (to|is) (?P<total_cases>\d+).*At (the )?present( time)?, there are (?P<community_contact>\w+) confirmed cases of COVID-19 in Victoria that may have been acquired through community transmission\..*Currently (?P<hospital>\w+) people are (recovering )?in hospital( .*(?P<recovered>\d+) people have recovered)?.*More than (?P<tested>[\d,]+) Victorians have been tested to date.*', body, re.MULTILINE | re.DOTALL)
+  m = re.match(r'^(Victoria has recorded( its first)? (?P<deaths>\w+) deaths related to coronavirus)?.*total number of( coronavirus \(COVID-19\))? cases (in Victoria|increased) (to|is) (?P<total_cases>\d+).*At (the )?present( time)?, there are (?P<community_contact>\w+) confirmed cases of COVID-19 in Victoria that may have been acquired through community transmission\..*Currently (?P<hospital>\w+) people are (recovering )?in hospital( .*(?P<recovered>\d+) people have recovered)?.*More than (?P<tested>[\d,]+) Victorians have been tested to date.*', body, re.MULTILINE | re.DOTALL)
   if m:
     total_cases = parse_num(m.group('total_cases'))
     community_contact = parse_num(m.group('community_contact'))
     hospital = parse_num(m.group('hospital'))
     tested = parse_num(m.group('tested'))
+    if m.group('deaths'):
+      deaths = parse_num(m.group('deaths'))
+    else:
+      deaths = 0
+
     if m.group('recovered'):
       recovered = parse_num(m.group('recovered'))
     else:
@@ -178,9 +189,9 @@ def parse_fulltext_post(body):
     if community_contact is None:
       print 'wtf?', m.group('community_contact')
 
-    return (total_cases, community_contact, hospital, tested, recovered)
+    return (total_cases, community_contact, hospital, tested, recovered, deaths)
   else:
-    return (None, None, None, None, None)
+    return (None, None, None, None, None, None)
 
 
 def parse_num(num):
@@ -196,6 +207,7 @@ def add_manual_data(timeseries_data):
       'tested': 1,
       'confirmed': 1,
       'hospitalized': 1,
+      'deaths': 0,
       'sources': {
         'Overseas acquired': 1, # Wuhan
       },
@@ -349,6 +361,7 @@ def add_manual_data(timeseries_data):
   hospitalized = 0
   recovered = 0
   tested = 0
+  deaths = 0
   age_groups = collections.defaultdict(lambda: 0)
   sources = collections.defaultdict(lambda: 0)
   for date in sorted(events.keys()):
@@ -357,6 +370,7 @@ def add_manual_data(timeseries_data):
     hospitalized = event_data.get('hospitalized', hospitalized)
     recovered = event_data.get('recovered', recovered)
     tested = event_data.get('tested', tested)
+    deaths = event_data.get('deaths', deaths)
 
     for k, v in event_data.get('age_groups', {}).iteritems():
       age_groups[k] += v
@@ -371,6 +385,7 @@ def add_manual_data(timeseries_data):
         'hospitalized': hospitalized,
         'recovered': recovered,
         'tested': tested,
+        'deaths': deaths,
         'age_groups': copy.deepcopy(age_groups),
         'sources': copy.deepcopy(sources),
       }
