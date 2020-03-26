@@ -10,7 +10,7 @@
       "type": "control",
       "control": {
         "class": "isolation",
-        "enforcement": "self-isolation"
+        "type": "self-isolation"
       }
     },
     {
