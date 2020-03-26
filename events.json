@@ -3,6 +3,7 @@
   "events": [
     {
       "date": "2020-03-15",
+      "name": "Australia institutes self-isolation rules for all incoming passengers",
       "citations": [
         "https://www.theguardian.com/world/2020/mar/24/australias-coronavirus-self-isolation-rules-who-has-to-do-it-and-how-it-works"
       ],
@@ -14,6 +15,7 @@
     },
     {
       "date": "2020-03-20",
+      "name": "Australia blocks arrival of all non-citizens, non-residents",
       "citations": [
         "https://www.abc.net.au/news/2020-03-19/coronavirus-non-resident-travel-ban-australia/12071640"
       ],
@@ -25,6 +27,7 @@
     },
     {
       "date": "2020-03-23",
+      "name": "Australian non-essential services to close, schools stay open in stage one measures",
       "citations": [
         "https://www.theguardian.com/world/live/2020/mar/22/coronavirus-updates-live-australia-nsw-victoria-qld-tasmania-cases-government-stimulus-latest-update-news"
       ],
