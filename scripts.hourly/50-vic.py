@@ -66,7 +66,7 @@ def main():
   }
 
   with open('by_state/vic.json', 'w') as f:
-    json.dump(formatted_data, f, indent=2)
+    json.dump(formatted_data, f, indent=2, sort_keys=True)
 
 def get_recent_timeseries_data():
   timeseries_data = {}
@@ -170,7 +170,7 @@ def add_historical_timeseries_data(timeseries_data):
   return timeseries_data
 
 def parse_fulltext_post(body):
-  m = re.match(r'^(Victoria has recorded( its first)? (?P<deaths>\w+) deaths related to coronavirus)?.*total number of( coronavirus \(COVID-19\))? cases (in Victoria|increased) (to|is) (?P<total_cases>\d+).*At (the )?present( time)?, there are (?P<community_contact>\w+) confirmed cases of COVID-19 in Victoria that may have been acquired through community transmission\..*Currently (?P<hospital>\w+) people are (recovering )?in hospital( .*(?P<recovered>\d+) people have recovered)?.*More than (?P<tested>[\d,]+) Victorians have been tested to date.*', body, re.MULTILINE | re.DOTALL)
+  m = re.match(r'^(Victoria has recorded( its first)? (?P<deaths>\w+) deaths related to coronavirus)?.*total number of( coronavirus \(COVID-19\))? cases (in Victoria|increased) (to|is) (?P<total_cases>\d+)([^\.]+\. Victoria has recorded (?P<deaths2>\w+) deaths related to COVID-19)?.*here are (?P<community_contact>\w+) confirmed cases of COVID-19 in Victoria that may have been acquired through community transmission\..*Currently (?P<hospital>\w+) people are (recovering )?in hospital( .*(?P<recovered>\d+) people have recovered)?.*More than (?P<tested>[\d,]+) Victorians have been tested to date.*', body, re.MULTILINE | re.DOTALL)
   if m:
     total_cases = parse_num(m.group('total_cases'))
     community_contact = parse_num(m.group('community_contact'))
@@ -178,6 +178,8 @@ def parse_fulltext_post(body):
     tested = parse_num(m.group('tested'))
     if m.group('deaths'):
       deaths = parse_num(m.group('deaths'))
+    elif m.group('deaths2'):
+      deaths = parse_num(m.group('deaths2'))
     else:
       deaths = 0
 
