@@ -51,7 +51,7 @@ def main():
   }
 
   with open('by_state/nsw.json', 'w') as f:
-    json.dump(formatted_data, f, indent=2)
+    json.dump(formatted_data, f, indent=2, sort_keys=True)
 
 def get_timeseries_data(url):
   post_list_soup = bs4.BeautifulSoup(requests.get(url).text, 'html.parser')
