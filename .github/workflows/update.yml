@@ -5,6 +5,9 @@ name: Update
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
 on:
+  push:
+    branches:
+      - master
   schedule:
     # Every hour *not* on the hour (to save NSW Health's poor servers)
     # (Run at 55 minutes past so that the follow-on cron job in the main repo
@@ -18,7 +21,8 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
-      max-parallel: 1
+      max-parallel: 1 # we don't want to fight to commit our changes
+      fail-fast: false # we want to run all of them, even if one fails
       matrix:
         state: ['nsw', 'qld', 'vic', 'wa']
 
@@ -37,6 +41,7 @@ jobs:
 
     - name: Commit files
       run: |
+        git pull # get any data pushed by previous steps
         git config --local user.email "action@github.com"
         git config --local user.name "GitHub Action"
         git add data_cache
