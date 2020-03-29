@@ -37,7 +37,7 @@ def main():
     'timeseries_dates': dates,
     'total': {
       'tested': [timeseries_data[d]['tested'] for d in dates],
-      'confirmed': [timeseries_data[d].get('confirmed', None) for d in dates],
+      'confirmed': trim_trailing_nones([timeseries_data[d].get('confirmed', None) for d in dates]),
       'current_icu': [timeseries_data[d]['icu'] for d in dates],
       'current_hospitalized': [timeseries_data[d]['hospitalized'] for d in dates],
       'deaths': [timeseries_data[d]['deaths'] for d in dates],
@@ -49,6 +49,12 @@ def main():
 
   with open('by_state/vic.json', 'w') as f:
     json.dump(formatted_data, f, indent=2, sort_keys=True)
+
+# If we have a timeseries that ends with None entries, we should remove them, leaving the last known as the last element
+def trim_trailing_nones(ts):
+  while len(ts) > 0 and ts[-1] is None:
+    ts.pop()
+  return ts
 
 # Fetch the current case status from PowerBI, Vic Health's live dashboard
 def get_timeseries_data_from_power_bi():
