@@ -38,8 +38,8 @@ def main():
     'total': {
       'tested': [timeseries_data[d]['tested'] for d in dates],
       'confirmed': [timeseries_data[d]['confirmed'] for d in dates],
-      'icu': [timeseries_data[d]['icu'] for d in dates],
-      'hospitalized': [timeseries_data[d]['hospitalized'] for d in dates],
+      'current_icu': [timeseries_data[d]['icu'] for d in dates],
+      'current_hospitalized': [timeseries_data[d]['hospitalized'] for d in dates],
       'deaths': [timeseries_data[d]['deaths'] for d in dates],
       'recovered': [timeseries_data[d]['recovered'] for d in dates],
     },
