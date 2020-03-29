@@ -393,6 +393,7 @@ def powerbi_request():
       'ActivityId': '6fcca753-9700-4b48-b587-353d4ecdde8d',
       'RequestId': 'ef1fdb86-a106-946a-01c4-c51cec865e73',
       'X-PowerBI-ResourceKey': '80f2a75d-ece4-49dd-9566-236a6522677c',
+      'Content-Type': 'application/json',
     })
 
   return r.text
