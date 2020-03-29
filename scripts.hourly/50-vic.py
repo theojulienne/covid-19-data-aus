@@ -224,13 +224,16 @@ def add_recent_data(timeseries_data):
     date = datetime.datetime.strptime(date_text, '%d %B %Y')
     body = layout_region.select_one('div.page-content').text.strip()
 
-    tested, deaths, recovered, hospitalized, icu = parse_fulltext_post(body)
+    confirmed, tested, deaths, recovered, hospitalized, icu = parse_fulltext_post(body)
 
     date_key = date.strftime('%Y-%m-%d')
 
-    # We should always be able to get the number of people tested
-    if tested is not None:
+    # We should always be able to get the number of people confirmed and tested
+    if tested is not None and confirmed is not None:
       timeseries_data[date_key]['tested'] = tested
+      # We overwrite the summed individual cases here, if we have an official
+      # media release
+      timeseries_data[date_key]['confirmed'] = confirmed
     else:
       raise Exception('Trouble parsing! %s' % date)
 
@@ -273,11 +276,12 @@ def add_historical_data(timeseries_data):
     date = datetime.datetime.strptime(release.select_one('div.page-date').text, '%d %b %Y')
     body = release.select_one('div#main').text.strip()
 
-    tested, deaths, recovered, hospitalized, icu = parse_fulltext_post(body)
+    confirmed, tested, deaths, recovered, hospitalized, icu = parse_fulltext_post(body)
 
-    # We should always be able to get the number of people tested
-    if tested is not None:
+    # We should always be able to get the number of people tested and confirmed
+    if tested is not None and confirmed is not None:
       timeseries_data[date.strftime('%Y-%m-%d')]['tested'] = tested
+      timeseries_data[date.strftime('%Y-%m-%d')]['confirmed'] = confirmed
     # Releases from before this date aren't easily machine-parseable, but we
     # know that
     elif date <= datetime.datetime(year=2020, month=3, day=15):
@@ -316,6 +320,11 @@ def fill_in_blank_data(timeseries_data):
   return timeseries_data
 
 def parse_fulltext_post(body):
+  confirmed = None
+  m = re.match(r'.*total number of (?:coronavirus \(COVID-19\) )?cases (in Victoria|increased) (is|to) (?P<confirmed>\d+)[\. ].*', body, re.MULTILINE | re.DOTALL)
+  if m:
+    confirmed = parse_num(m.group('confirmed'))
+
   tested = None
   m = re.match(r'.*More than (?P<tested>[\d,]+) Victorians have been tested to date.*', body, re.MULTILINE | re.DOTALL)
   if m:
@@ -343,7 +352,7 @@ def parse_fulltext_post(body):
   if m:
     icu = parse_num(m.group('icu'))
 
-  return (tested, deaths, recovered, hospital, icu)
+  return (confirmed, tested, deaths, recovered, hospital, icu)
 
 def parse_num(num):
   if re.match(r'^[\d,]+$', num):
