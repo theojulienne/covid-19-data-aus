@@ -45,6 +45,9 @@ def main():
     'total': {
       'confirmed': [timeseries_data[d]['confirmed'] for d in dates],
       'tested': [timeseries_data[d]['tested'] for d in dates],
+      'current_hospitalized': [timeseries_data[d]['hospitalized'] for d in dates],
+      'current_icu': [timeseries_data[d]['icu'] for d in dates],
+      'current_ventilators': [timeseries_data[d]['ventilators'] for d in dates],
     },
     'age_groups': age_group_data,
     'sources': source_data,
@@ -93,11 +96,17 @@ def get_timeseries_data(url):
         else:
           raise 'Unknown table! %s' % repr(parsed_table['headers'])
 
+      body = soup.select_one('div.maincontent').text
+      hospitalized, icu, ventilators = parse_full_body(body)
+
       date_data = {
         'confirmed': confirmed,
         # Exclude in progress tests from the total tested, since we want
         # this to indicate completed tests
         'tested': tested,
+        'hospitalized': hospitalized,
+        'icu': icu,
+        'ventilators': ventilators,
       }
 
       if age_groups is not None:
@@ -125,8 +134,8 @@ def process_overall_table(table):
     in_progress = 0
 
   # If there's a handy "total" row, use that
-  if len([r[1] for r in table['data'] if 'Total' in r[0]]) > 0:
-    total = [r[1] for r in table['data'] if 'Total' in r[0]][0]
+  if len([r[1] for r in table['data'] if r[0].strip() == 'Total']) > 0:
+    total = [r[1] for r in table['data'] if r[0].strip() == 'Total'][0]
   else:
     total = sum([r[1] for r in table['data']])
 
@@ -174,6 +183,19 @@ def process_source_table(table):
     'Under investigation': investigation,
   }
 
+def parse_full_body(text):
+  m = re.match(r'.*There are(?: currently)? (?P<hospitalized>\d+) COVID-19 cases being treated in NSW.* (?P<icu>\d+) cases in our Intensive Care Units and, of those, (?P<ventilators>\d+) require ventilators at this stage.*', text, re.MULTILINE | re.DOTALL)
+
+  hospitalized = None
+  icu = None
+  ventilators = None
+  if m:
+    hospitalized = int(m.group('hospitalized'))
+    icu = int(m.group('icu'))
+    ventilators = int(m.group('ventilators'))
+
+  return (hospitalized, icu, ventilators)
+
 def parse_table(to_parse):
   rows = to_parse.select('tr')
   headers = [clean_text(th.text) for th in rows[0].select('th')]
@@ -196,8 +218,6 @@ def parse_datum(datum):
     return datum
 
 def add_manual_data(timeseries_data):
-
-
   events = {
     # https://www.health.nsw.gov.au/news/Pages/20200125_02.aspx,
     # https://www.health.nsw.gov.au/news/Pages/20200125_03.aspx
@@ -473,7 +493,21 @@ def add_manual_data(timeseries_data):
         'Under investigation': 11,
       }
     },
-
+    # https://www.health.nsw.gov.au/news/Pages/20200324_00.aspx
+    '2020-03-24': {
+      'icu': 12,
+      'ventilators': 8,
+    },
+    # https://www.health.nsw.gov.au/news/Pages/20200325_00.aspx
+    '2020-03-25': {
+      'icu': 10,
+      'ventilators': 4,
+    },
+    # https://www.health.nsw.gov.au/news/Pages/20200326_00.aspx
+    '2020-03-26': {
+      'icu': 16,
+      'ventilators': 10,
+    },
   }
 
   age_groups = collections.defaultdict(lambda: 0)
@@ -488,8 +522,17 @@ def add_manual_data(timeseries_data):
     # If there's no date in the timeseries data, there's no data for that day,
     # and it probably doesn't super matter?
     if date in timeseries_data:
-      timeseries_data[date]['age_groups'] = copy.deepcopy(age_groups)
-      timeseries_data[date]['sources'] = copy.deepcopy(sources)
+      # Only overwrite these values if they're not present
+      if 'age_groups' not in timeseries_data[date]:
+        timeseries_data[date]['age_groups'] = copy.deepcopy(age_groups)
+      if 'sources' not in timeseries_data[date]:
+        timeseries_data[date]['sources'] = copy.deepcopy(sources)
+
+      # Always overwrite these ones - we know that they'll be missing
+      if 'icu' in event_data:
+        timeseries_data[date]['icu'] = event_data['icu']
+      if 'ventilators' in event_data:
+        timeseries_data[date]['ventilators'] = event_data['ventilators']
 
   return timeseries_data
 
