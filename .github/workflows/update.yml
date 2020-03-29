@@ -31,7 +31,7 @@ jobs:
       run: pip install -r requirements.txt
 
     - name: Run hourly data updates
-      run: ./scripts.hourly/${STATE_TO_RUN}.py
+      run: ./scripts.hourly/50-${STATE_TO_RUN}.py
       env:
         STATE_TO_RUN=${{ matrix.state }}
 
