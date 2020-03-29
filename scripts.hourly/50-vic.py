@@ -37,7 +37,7 @@ def main():
     'timeseries_dates': dates,
     'total': {
       'tested': [timeseries_data[d]['tested'] for d in dates],
-      'confirmed': [timeseries_data[d]['confirmed'] for d in dates],
+      'confirmed': [timeseries_data[d].get('confirmed', None) for d in dates],
       'current_icu': [timeseries_data[d]['icu'] for d in dates],
       'current_hospitalized': [timeseries_data[d]['hospitalized'] for d in dates],
       'deaths': [timeseries_data[d]['deaths'] for d in dates],
@@ -75,7 +75,6 @@ def get_timeseries_data_from_power_bi():
   cases = uncompress_powerbi_response(data)
 
   timeseries_data = collections.defaultdict(lambda: {
-    'confirmed': 0,
     'age_groups': collections.defaultdict(lambda: 0),
     'sources': collections.defaultdict(lambda: 0),
   })
@@ -86,6 +85,8 @@ def get_timeseries_data_from_power_bi():
     event_date_key = event_date.strftime('%Y-%m-%d')
 
     # Normalize age groups into bunches of 10, as NSW does
+    if 'confirmed' not in timeseries_data[event_date_key]:
+      timeseries_data[event_date_key]['confirmed'] = 0
     timeseries_data[event_date_key]['confirmed'] += 1
 
     age_group = normalize_age_group(age_group)
@@ -110,7 +111,9 @@ def get_timeseries_data_from_power_bi():
     curr_key = curr_time.strftime('%Y-%m-%d')
     prev_key = prev_time.strftime('%Y-%m-%d')
 
-    timeseries_data[curr_key]['confirmed'] += timeseries_data[prev_key]['confirmed']
+    if 'confirmed' not in timeseries_data[curr_key]:
+      timeseries_data[curr_key]['confirmed'] = 0
+    timeseries_data[curr_key]['confirmed'] += timeseries_data[prev_key].get('confirmed', 0)
 
     for k in set(timeseries_data[curr_key]['age_groups'].keys() + timeseries_data[prev_key]['age_groups'].keys()):
       timeseries_data[curr_key]['age_groups'][k] += timeseries_data[prev_key]['age_groups'][k]
@@ -217,20 +220,22 @@ def add_recent_data(timeseries_data):
 
     tested, deaths, recovered, hospitalized, icu = parse_fulltext_post(body)
 
+    date_key = date.strftime('%Y-%m-%d')
+
     # We should always be able to get the number of people tested
     if tested is not None:
-      timeseries_data[date.strftime('%Y-%m-%d')]['tested'] = tested
+      timeseries_data[date_key]['tested'] = tested
     else:
       raise Exception('Trouble parsing! %s' % date)
 
     if deaths is not None:
-      timeseries_data[date.strftime('%Y-%m-%d')]['deaths'] = deaths
+      timeseries_data[date_key]['deaths'] = deaths
     if recovered is not None:
-      timeseries_data[date.strftime('%Y-%m-%d')]['recovered'] = recovered
+      timeseries_data[date_key]['recovered'] = recovered
     if hospitalized is not None:
-      timeseries_data[date.strftime('%Y-%m-%d')]['hospitalized'] = hospitalized
+      timeseries_data[date_key]['hospitalized'] = hospitalized
     if icu is not None:
-      timeseries_data[date.strftime('%Y-%m-%d')]['icu'] = icu
+      timeseries_data[date_key]['icu'] = icu
 
   return timeseries_data
 
