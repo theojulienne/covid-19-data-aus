@@ -11,42 +11,23 @@ import bs4
 import requests
 from word2number import w2n
 
+# Whether or not you should cache the requests of a Power BI request.
+# This is strongly recommended if developing locally, or the server will rate
+# limit you.
+CACHE_POWERBI = False
+
 def main():
-  timeseries_data = get_recent_timeseries_data()
-  timeseries_data = add_historical_timeseries_data(timeseries_data)
+  timeseries_data = get_timeseries_data_from_power_bi()
+
+  # Fill in the test, hospitalization, icu, and recovery data from the media
+  # releases - these are harder to generate from the PowerBI point in time
+  # patient snapshot (though we should be able to get this, starting now!)
+  timeseries_data = add_recent_data(timeseries_data)
+  timeseries_data = add_historical_data(timeseries_data)
   timeseries_data = add_manual_data(timeseries_data)
-
-  # Muck with the data to get it into the format that's expected
-  # Fill in the blanks
-  dates = sorted(timeseries_data.keys())
-
-  start_time = min([datetime.datetime.strptime(d, '%Y-%m-%d') for d in dates])
-  end_time = max([datetime.datetime.strptime(d, '%Y-%m-%d') for d in dates])
-
-  curr_time = start_time
-  prev_time = None
-  while curr_time <= end_time:
-    key = curr_time.strftime('%Y-%m-%d')
-
-    if key not in timeseries_data:
-      timeseries_data[key] = timeseries_data[prev_time.strftime('%Y-%m-%d')]
-    else:
-      # Patch over the gaps...
-      if 'recovered' not in timeseries_data[key]:
-        timeseries_data[key]['recovered'] = timeseries_data[prev_time.strftime('%Y-%m-%d')]['recovered']
-      if 'hospitalized' not in timeseries_data[key]:
-        timeseries_data[key]['hospitalized'] = timeseries_data[prev_time.strftime('%Y-%m-%d')]['hospitalized']
-      if 'deaths' not in timeseries_data[key]:
-        timeseries_data[key]['deaths'] = timeseries_data[prev_time.strftime('%Y-%m-%d')]['deaths']
-      if 'tested' not in timeseries_data[key]:
-        timeseries_data[key]['tested'] = timeseries_data[prev_time.strftime('%Y-%m-%d')]['tested']
-
-
-    prev_time = curr_time
-    curr_time = curr_time + datetime.timedelta(days=1)
+  timeseries_data = fill_in_blank_data(timeseries_data)
 
   dates = sorted(timeseries_data.keys())
-  values = [timeseries_data[d] for d in dates]
 
   # Muck with the age groups and sources data to do the right things
   age_group_data = munge_data_to_output(timeseries_data, dates, 'age_groups')
@@ -55,8 +36,9 @@ def main():
   formatted_data = {
     'timeseries_dates': dates,
     'total': {
-      'confirmed': [timeseries_data[d]['confirmed'] for d in dates],
       'tested': [timeseries_data[d]['tested'] for d in dates],
+      'confirmed': [timeseries_data[d]['confirmed'] for d in dates],
+      'icu': [timeseries_data[d]['icu'] for d in dates],
       'hospitalized': [timeseries_data[d]['hospitalized'] for d in dates],
       'deaths': [timeseries_data[d]['deaths'] for d in dates],
       'recovered': [timeseries_data[d]['recovered'] for d in dates],
@@ -68,9 +50,142 @@ def main():
   with open('by_state/vic.json', 'w') as f:
     json.dump(formatted_data, f, indent=2, sort_keys=True)
 
-def get_recent_timeseries_data():
-  timeseries_data = {}
+# Fetch the current case status from PowerBI, Vic Health's live dashboard
+def get_timeseries_data_from_power_bi():
+  if CACHE_POWERBI:
+    data = json.loads(cache_request('data_cache/vic/powerbi.json', powerbi_request))
+  else:
+    data = json.loads(powerbi_request())
 
+    # If we got back no data, we're likely being 401'd (rate limited) - fall
+    # back to the cache file
+    if data == '':
+      print 'Empty response received - falling back to cache'
+      data = json.loads(cache_request('data_cache/vic/powerbi.json', powerbi_request, force_cache=True))
+
+    # Otherwise, if we successfully pulled data, update the day's cache file
+    else:
+      # This will be wrong for the next week, and it's not the right way to
+      # handle timezones, but it's not going to be off by enough to actually
+      # matter
+      day = datetime.datetime.now() + datetime.timedelta(hours=10)
+      with open('data_cache/vic/%s_powerbi.snapshot.json' % day.strftime('%Y-%m-%d'), 'wb') as f:
+        f.write(json.dumps(data))
+
+  cases = uncompress_powerbi_response(data)
+
+  timeseries_data = collections.defaultdict(lambda: {
+    'confirmed': 0,
+    'age_groups': collections.defaultdict(lambda: 0),
+    'sources': collections.defaultdict(lambda: 0),
+  })
+
+  for c in cases:
+    age_group, _gender, _case_num, _clinician_status, acquired, _acquired_country, event_date, _clinician_status_n, _acquired_n, _acquired_country_n, _count, _lga = c
+
+    event_date_key = event_date.strftime('%Y-%m-%d')
+
+    # Normalize age groups into bunches of 10, as NSW does
+    timeseries_data[event_date_key]['confirmed'] += 1
+
+    age_group = normalize_age_group(age_group)
+    if age_group is not None:
+      timeseries_data[event_date_key]['age_groups'][age_group] += 1
+    source = normalize_source(acquired)
+    if source is not None:
+      timeseries_data[event_date_key]['sources'][source] += 1
+
+    # We can use clinician status over time to determine hospitalized,
+    # recovered, icu, and deaths. For now though, let's keep using media
+    # briefings for that
+
+  # All our data so far has been "per-day", but we actually need cumulative, so
+  # convert to that
+  start_time = min([datetime.datetime.strptime(d, '%Y-%m-%d') for d in timeseries_data.keys()])
+  end_time = max([datetime.datetime.strptime(d, '%Y-%m-%d') for d in timeseries_data.keys()])
+
+  curr_time = start_time + datetime.timedelta(days=1)
+  prev_time = start_time
+  while curr_time <= end_time:
+    curr_key = curr_time.strftime('%Y-%m-%d')
+    prev_key = prev_time.strftime('%Y-%m-%d')
+
+    timeseries_data[curr_key]['confirmed'] += timeseries_data[prev_key]['confirmed']
+
+    for k in set(timeseries_data[curr_key]['age_groups'].keys() + timeseries_data[prev_key]['age_groups'].keys()):
+      timeseries_data[curr_key]['age_groups'][k] += timeseries_data[prev_key]['age_groups'][k]
+
+    for s in set(timeseries_data[curr_key]['sources'].keys() + timeseries_data[prev_key]['sources'].keys()):
+      timeseries_data[curr_key]['sources'][s] += timeseries_data[prev_key]['sources'][s]
+
+    prev_time = curr_time
+    curr_time += datetime.timedelta(days=1)
+
+  return timeseries_data
+
+# Uncompresses the PowerBI response back to a normal set of Python tuples
+def uncompress_powerbi_response(data):
+  value_lookup = data['results'][0]['result']['data']['dsr']['DS'][0]['ValueDicts']
+  header = data['results'][0]['result']['data']['dsr']['DS'][0]['PH'][0]['DM0'][0]
+  # There's an implicit None here from the group by
+  header['C'] = [None] + header['C']
+
+  results = []
+  for case in data['results'][0]['result']['data']['dsr']['DS'][0]['PH'][0]['DM0']:
+    case_num = None
+    event_date = None
+
+    ci = 0
+
+    row = []
+    for i in range(0, 12):
+      mapping = header['S'][i]
+      dn = mapping.get('DN', None)
+
+      if 'R' not in case or (case['R'] >> i) & 1 == 0:
+        value = case['C'][ci]
+
+        if dn is not None and isinstance(value, int):
+          value = value_lookup[dn][value]
+
+        row.append(value)
+        ci += 1
+      else:
+        if len(results) > 0:
+          row.append(results[-1][i])
+        else:
+          row.append(None)
+
+    if row[0] is not None:
+      row[0] = row[0].replace(u'\u2013', '-')
+
+    if row[6] is not None and isinstance(row[6], int):
+      row[6] = datetime.datetime.fromtimestamp(row[6]/1000.0)
+    results.append(tuple(row))
+
+  return results
+
+# Normalized the age groups to buckets of 10 years, as NSW does
+def normalize_age_group(age_group):
+  if age_group is None:
+    return None
+  elif age_group == '80-84' or age_group == '85+':
+    return '80+'
+  else:
+    age_start = int(age_group.split('-')[0])
+    if age_start % 10 != 0:
+      age_start -= 5
+    return '%d-%d' % (age_start, age_start + 9)
+
+def normalize_source(source):
+  return {
+    'Contact with a confirmed case': 'Locally acquired - contact of a confirmed case',
+    'Acquired in Australia, unknown source': 'Locally acquired - contact not identified',
+    'Travel overseas': 'Overseas acquired',
+    'Under investigation': 'Under investigation',
+  }.get(source, None)
+
+def add_recent_data(timeseries_data):
   recent_releases = bs4.BeautifulSoup(requests.get('https://www.dhhs.vic.gov.au/media-hub-coronavirus-disease-covid-19').text, 'html.parser')
   page_body = recent_releases.select_one('div.page-content')
 
@@ -85,14 +200,10 @@ def get_recent_timeseries_data():
 
     uri = li.select_one('a').attrs['href']
     href = 'https://www.dhhs.vic.gov.au' + uri
-    cache_filename = 'data_cache/vic/'+uri.replace('/', '_')+'.html'
-    if os.path.exists(cache_filename):
-      with open(cache_filename, 'rb') as f:
-        response_body = f.read()
-    else:
-      response_body = requests.get(href).text
-      with open(cache_filename, 'wb') as f:
-        f.write(response_body.encode('utf-8'))
+    response_body = cache_request(
+      'data_cache/vic/%s.html' % uri.replace('/', '_'),
+      lambda: requests.get(href).text
+    )
 
     release = bs4.BeautifulSoup(response_body, 'html.parser')
     layout_region = release.select_one('div.layout__region')
@@ -104,27 +215,26 @@ def get_recent_timeseries_data():
     date = datetime.datetime.strptime(date_text, '%d %B %Y')
     body = layout_region.select_one('div.page-content').text.strip()
 
-    total_cases, community_contact, hospital, tested, recovered, deaths = parse_fulltext_post(body)
+    tested, deaths, recovered, hospitalized, icu = parse_fulltext_post(body)
 
-    if total_cases is not None:
-      timeseries_data[date.strftime('%Y-%m-%d')] = {
-        'tested': tested,
-        'confirmed': total_cases,
-        'hospitalized': hospital,
-        'deaths': deaths,
-        'sources': {
-          'Locally acquired - contact not identified': community_contact,
-        }
-      }
-
-      if recovered:
-        timeseries_data[date.strftime('%Y-%m-%d')]['recovered'] = recovered
+    # We should always be able to get the number of people tested
+    if tested is not None:
+      timeseries_data[date.strftime('%Y-%m-%d')]['tested'] = tested
     else:
       raise Exception('Trouble parsing! %s' % date)
 
+    if deaths is not None:
+      timeseries_data[date.strftime('%Y-%m-%d')]['deaths'] = deaths
+    if recovered is not None:
+      timeseries_data[date.strftime('%Y-%m-%d')]['recovered'] = recovered
+    if hospitalized is not None:
+      timeseries_data[date.strftime('%Y-%m-%d')]['hospitalized'] = hospitalized
+    if icu is not None:
+      timeseries_data[date.strftime('%Y-%m-%d')]['icu'] = icu
+
   return timeseries_data
 
-def add_historical_timeseries_data(timeseries_data):
+def add_historical_data(timeseries_data):
   historical_releases = bs4.BeautifulSoup(
     requests.get('https://www2.health.vic.gov.au/about/media-centre/mediareleases/?ps=10000&s=relevance&pn=1').text,
     'html.parser'
@@ -142,59 +252,87 @@ def add_historical_timeseries_data(timeseries_data):
     if 'COVID-19' not in title and 'coronavirus' not in title.lower():
       continue
 
-    release = bs4.BeautifulSoup(requests.get(href).text, 'html.parser')
+    uri = '_' + '_'.join(href.split('/')[3:])
+    response_body = cache_request(
+      'data_cache/vic/' + uri.replace('/', '_') + '.html',
+      lambda: requests.get(href).text,
+    )
+
+    release = bs4.BeautifulSoup(response_body, 'html.parser')
     date = datetime.datetime.strptime(release.select_one('div.page-date').text, '%d %b %Y')
     body = release.select_one('div#main').text.strip()
 
-    total_cases, community_contact, hospital, tested, recovered, deaths = parse_fulltext_post(body)
-    if total_cases is not None:
-      timeseries_data[date.strftime('%Y-%m-%d')] = {
-        'tested': tested,
-        'confirmed': total_cases,
-        'hospitalized': hospital,
-        'deaths': deaths,
-        'sources': {
-          'Locally acquired - contact not identified': community_contact,
-        }
-      }
+    tested, deaths, recovered, hospitalized, icu = parse_fulltext_post(body)
 
-      if recovered:
-        timeseries_data[date.strftime('%Y-%m-%d')]['recovered'] = recovered
-
-    # Releases from before this date aren't easily machine-parseable
+    # We should always be able to get the number of people tested
+    if tested is not None:
+      timeseries_data[date.strftime('%Y-%m-%d')]['tested'] = tested
+    # Releases from before this date aren't easily machine-parseable, but we
+    # know that
     elif date <= datetime.datetime(year=2020, month=3, day=15):
       continue
     else:
-      raise Exception('Unparseable post! %s' % href)
+      raise Exception('Trouble parsing! %s' % date)
+
+    if deaths is not None:
+      timeseries_data[date.strftime('%Y-%m-%d')]['deaths'] = deaths
+    if recovered is not None:
+      timeseries_data[date.strftime('%Y-%m-%d')]['recovered'] = recovered
+    if hospitalized is not None:
+      timeseries_data[date.strftime('%Y-%m-%d')]['hospitalized'] = hospitalized
+    if icu is not None:
+      timeseries_data[date.strftime('%Y-%m-%d')]['icu'] = icu
+
+  return timeseries_data
+
+def fill_in_blank_data(timeseries_data):
+  start_time = min([datetime.datetime.strptime(d, '%Y-%m-%d') for d in timeseries_data.keys()])
+  end_time = max([datetime.datetime.strptime(d, '%Y-%m-%d') for d in timeseries_data.keys()])
+
+  curr_time = start_time + datetime.timedelta(days=1)
+  prev_time = start_time
+  while curr_time <= end_time:
+    curr_key = curr_time.strftime('%Y-%m-%d')
+    prev_key = prev_time.strftime('%Y-%m-%d')
+
+    for k in ['tested', 'deaths', 'recovered', 'hospitalized', 'icu']:
+      if k not in timeseries_data[curr_key]:
+        timeseries_data[curr_key][k] = timeseries_data[prev_key][k]
+
+    prev_time = curr_time
+    curr_time = curr_time + datetime.timedelta(days=1)
 
   return timeseries_data
 
 def parse_fulltext_post(body):
-  m = re.match(r'^(Victoria has recorded( its first)? (?P<deaths>\w+) deaths related to coronavirus)?.*total number of( coronavirus \(COVID-19\))? cases (in Victoria|increased) (to|is) (?P<total_cases>\d+)([^\.]+\. Victoria has recorded (?P<deaths2>\w+) deaths related to COVID-19)?.*here are (?P<community_contact>\w+) confirmed cases of COVID-19 in Victoria that may have been acquired through community transmission\..*Currently (?P<hospital>\w+) people are (recovering )?in hospital( .*(?P<recovered>\d+) people have recovered)?.*More than (?P<tested>[\d,]+) Victorians have been tested to date.*', body, re.MULTILINE | re.DOTALL)
+  tested = None
+  m = re.match(r'.*More than (?P<tested>[\d,]+) Victorians have been tested to date.*', body, re.MULTILINE | re.DOTALL)
   if m:
-    total_cases = parse_num(m.group('total_cases'))
-    community_contact = parse_num(m.group('community_contact'))
-    hospital = parse_num(m.group('hospital'))
     tested = parse_num(m.group('tested'))
-    if m.group('deaths'):
-      deaths = parse_num(m.group('deaths'))
-    elif m.group('deaths2'):
-      deaths = parse_num(m.group('deaths2'))
-    else:
-      deaths = 0
 
-    if m.group('recovered'):
-      recovered = parse_num(m.group('recovered'))
-    else:
-      recovered = None
+  deaths = None
+  m = re.match(r'.*Victoria has(?: now)? recorded(?: its first)? (?P<deaths>\w+) deaths related to (?:coronavirus|COVID-19).*', body, re.MULTILINE | re.DOTALL)
+  if m:
+    deaths = parse_num(m.group('deaths'))
 
-    if community_contact is None:
-      print 'wtf?', m.group('community_contact')
+  recovered = None
+  m = re.match(r'.* (?P<recovered>\d+) people have recovered.*', body, re.MULTILINE | re.DOTALL)
+  if m:
+    recovered = parse_num(m.group('recovered'))
 
-    return (total_cases, community_contact, hospital, tested, recovered, deaths)
-  else:
-    return (None, None, None, None, None, None)
+  # Hospitalizations
+  hospital = None
+  m = re.match(r'.*Currently (?P<hospital>\w+) people are (recovering )?in hospital.*', body, re.MULTILINE | re.DOTALL)
+  if m:
+    hospital = parse_num(m.group('hospital'))
 
+  # ICU
+  icu = None
+  m = re.match(r'.*including (?P<icu>\w+) patients in intensive care.*', body, re.MULTILINE | re.DOTALL)
+  if m:
+    icu = parse_num(m.group('icu'))
+
+  return (tested, deaths, recovered, hospital, icu)
 
 def parse_num(num):
   if re.match(r'^[\d,]+$', num):
@@ -204,197 +342,61 @@ def parse_num(num):
 
 def add_manual_data(timeseries_data):
   events = {
+    # Case data starts here, which causes weirdness if we don't have a tested
+    # figure
+    '2020-01-24': {
+      'tested': 0,
+      'deaths': 0,
+      'recovered': 0,
+      'hospitalized': 0,
+      'icu': 0,
+    },
     # https://www2.health.vic.gov.au/about/media-centre/MediaReleases/first-novel-coronavirus-case-in-victoria
     '2020-01-25': {
       'tested': 1,
-      'confirmed': 1,
-      'hospitalized': 1,
-      'deaths': 0,
-      'sources': {
-        'Overseas acquired': 1, # Wuhan
-      },
-      'age_groups': {
-        '50-59': 1,
-      }
     },
     # https://www2.health.vic.gov.au/about/media-centre/MediaReleases/second-novel-coronavirus-case-victoria
     '2020-01-29': {
       'tested': 1,
-      'confirmed': 1,
-      # Not hospitalized
-      'sources': {
-        'Overseas acquired': 1, # Wuhan
-      },
-      'age_groups': {
-        '60-69': 1,
-      }
     },
     # https://www2.health.vic.gov.au/about/media-centre/MediaReleases/third-novel-coronavirus-case-victoria
     '2020-01-30': {
-      'tested': 69,
-      'confirmed': 1,
-      'hospitalized': 1,
-      'sources': {
-        'Overseas acquired': 1, # Hubei
-      },
-      'age_groups': {
-        '40-49': 1,
-      }
+      'tested': 69
     },
     # https://www2.health.vic.gov.au/about/media-centre/MediaReleases/fourth-novel-coronavirus-case-victoria
     '2020-02-01': {
       'tested': 149 - 71,
-      'confirmed': 1,
-      # Not hospitalized
-      'sources': {
-        'Overseas acquired': 1, # Wuhan
-      },
-      'age_groups': {
-        '20-29': 1,
-      }
-    },
-    # https://www2.health.vic.gov.au/about/media-centre/MediaReleases/ninth-covid-19-case-victoria
-    # Yay, data gaps -_-
-    '2020-03-02': {
-      'confirmed': 5,
-      'recovered': 7,
-      'hospitalized': 1, # One at home, one in hospital, three mysteries
-      'sources': {
-        'Overseas acquired': 5, # Iran, Diamond Princess, ??, ??, ??
-      },
-      'age_groups': {
-        '30-39': 1,
-        '70-79': 1,
-      }
-    },
-    # https://www2.health.vic.gov.au/about/media-centre/MediaReleases/tenth-covid-19-case-victoria
-    '2020-03-04': {
-      'confirmed': 1,
-      # Not hospitalized
-      'sources': {
-        'Overseas acquired': 1, # Iran
-      },
-      'age_groups': {
-        '30-39': 1,
-      }
-    },
-    # https://www2.health.vic.gov.au/about/media-centre/MediaReleases/eleventh-case-coronavirus-victoria
-    '2020-03-07': {
-      'confirmed': 1,
-      # Not hospitalized
-      'sources': {
-        'Overseas acquired': 1, # US
-      },
-      'age_groups': {
-        '70-79': 1,
-      }
-    },
-    # https://www2.health.vic.gov.au/about/media-centre/MediaReleases/new-case-covid-19-victoria
-    '2020-03-08': {
-      'confirmed': 1,
-      # Not hospitalized
-      'sources': {
-        'Overseas acquired': 1, # Indonesia
-      },
-      'age_groups': {
-        '50-59': 1,
-      }
-    },
-    # https://www2.health.vic.gov.au/about/media-centre/MediaReleases/three-new-cases-covid-19-in-vic-10-march-2020
-    '2020-03-10': {
-      'confirmed': 3,
-      # None hospitalized
-      'sources': {
-        'Overseas acquired': 2, # Israel, Jordon, Egypt, Singapore; US
-        'Locally acquired - contact of a confirmed case': 1,
-      },
-      'age_groups': {
-        '50-59': 1,
-        '70-79': 2,
-      }
-    },
-    # https://www2.health.vic.gov.au/about/media-centre/MediaReleases/three-more-cases-covid-19-victoria
-    '2020-03-11': {
-      'confirmed': 3,
-      # None hospitalized
-      'sources': {
-        'Overseas acquired': 3, # US; US; US
-      },
-      'age_groups': {
-        '20-29': 1,
-        '50-59': 2,
-      }
-    },
-    # https://www2.health.vic.gov.au/about/media-centre/MediaReleases/more-covid-19-cases-confirmed-in-victoria
-    '2020-03-12': {
-      'confirmed': 6,
-      # None hospitalized
-      'sources': {
-        'Overseas acquired': 5, # Not listed where they flew from
-        'Locally acquired - contact of a confirmed case': 1,
-      },
-      # Here ends our detailed age data :(
-    },
-    # https://www2.health.vic.gov.au/about/media-centre/MediaReleases/more-covid-19-cases-confirmed-in-victoria-13-march-2020
-    '2020-03-13': {
-      'confirmed': 9,
-      # None hospitalized
-      'sources': {
-        'Overseas acquired': 7, # Not listed where they flew from
-        'Locally acquired - contact of a confirmed case': 1,
-        'Locally acquired - contact not identified': 1,
-      },
-    },
-    # https://www2.health.vic.gov.au/about/media-centre/MediaReleases/more-covid-19-cases-confirmed-in-victoria-14-march-2020
-    '2020-03-14': {
-      'confirmed': 13,
-      'hospitalized': 1,
-      # One person hospitalized, others in home isolation
-      # No detailed source data :(
-    },
-    # https://www2.health.vic.gov.au/about/media-centre/MediaReleases/more-covid19-cases-confirmed-victoria-15-march
-    '2020-03-15': {
-      'confirmed': 8,
-      # None hospitalized
     },
   }
 
-  confirmed = 0
-  hospitalized = 0
-  recovered = 0
-  tested = 0
-  deaths = 0
-  age_groups = collections.defaultdict(lambda: 0)
-  sources = collections.defaultdict(lambda: 0)
-  for date in sorted(events.keys()):
-    event_data = events[date]
-    confirmed = event_data.get('confirmed', confirmed)
-    hospitalized = event_data.get('hospitalized', hospitalized)
-    recovered = event_data.get('recovered', recovered)
-    tested = event_data.get('tested', tested)
-    deaths = event_data.get('deaths', deaths)
-
-    for k, v in event_data.get('age_groups', {}).iteritems():
-      age_groups[k] += v
-    for k, v in event_data.get('sources', {}).iteritems():
-      sources[k] += v
-
-    # If there's already data for this date, not sure what happened - just
-    # override with this info
-    if date not in timeseries_data:
-      timeseries_data[date] = {
-        'confirmed': confirmed,
-        'hospitalized': hospitalized,
-        'recovered': recovered,
-        'tested': tested,
-        'deaths': deaths,
-        'age_groups': copy.deepcopy(age_groups),
-        'sources': copy.deepcopy(sources),
-      }
-    else:
-      raise Exception('Date already existed? %s' % date)
+  for e in events:
+    timeseries_data[e]['tested'] = events[e]['tested']
+    if 'deaths' in events[e]:
+      timeseries_data[e]['deaths'] = events[e]['deaths']
+    if 'recovered' in events[e]:
+      timeseries_data[e]['recovered'] = events[e]['recovered']
+    if 'hospitalized' in events[e]:
+      timeseries_data[e]['hospitalized'] = events[e]['hospitalized']
+    if 'icu' in events[e]:
+      timeseries_data[e]['icu'] = events[e]['icu']
 
   return timeseries_data
+
+def powerbi_request():
+  q = '{"version":"1.0.0","queries":[{"Query":{"Commands":[{"SemanticQueryDataShapeCommand":{"Query":{"Version":2,"From":[{"Name":"d","Entity":"dimAgeGroup"},{"Name":"l","Entity":"Linelist"}],"Select":[{"Column":{"Expression":{"SourceRef":{"Source":"d"}},"Property":"AgeGroup"},"Name":"dimAgeGroup.AgeGroup"},{"Column":{"Expression":{"SourceRef":{"Source":"l"}},"Property":"Sex"},"Name":"Linelist.Sex"},{"Column":{"Expression":{"SourceRef":{"Source":"l"}},"Property":"PHESSID"},"Name":"CountNonNull(Linelist.PHESSID)"},{"Column":{"Expression":{"SourceRef":{"Source":"l"}},"Property":"clin_status"},"Name":"Linelist.clin_status"},{"Column":{"Expression":{"SourceRef":{"Source":"l"}},"Property":"acquired"},"Name":"Linelist.acquired"},{"Column":{"Expression":{"SourceRef":{"Source":"l"}},"Property":"acquired_country"},"Name":"Linelist.acquired_country"},{"Column":{"Expression":{"SourceRef":{"Source":"l"}},"Property":"Eventdate"},"Name":"Linelist.Eventdate"},{"Column":{"Expression":{"SourceRef":{"Source":"l"}},"Property":"clin_status_n"},"Name":"Linelist.clin_status_n"},{"Column":{"Expression":{"SourceRef":{"Source":"l"}},"Property":"acquired_n"},"Name":"Linelist.acquired_n"},{"Column":{"Expression":{"SourceRef":{"Source":"l"}},"Property":"acquired_country_n"},"Name":"Linelist.acquired_country_n"},{"Column":{"Expression":{"SourceRef":{"Source":"l"}},"Property":"CountValue"},"Name":"Linelist.CountValue"},{"Column":{"Expression":{"SourceRef":{"Source":"l"}},"Property":"Localgovernmentarea"},"Name":"Linelist.Localgovernmentarea"},{"Measure":{"Expression":{"SourceRef":{"Source":"l"}},"Property":"M_Age_MedianANDRange"},"Name":"Linelist.M_Age_MedianANDRange"}],"OrderBy":[{"Direction":1,"Expression":{"Column":{"Expression":{"SourceRef":{"Source":"d"}},"Property":"AgeGroup"}}}],"GroupBy":[{"SourceRef":{"Source":"l"},"Name":"Linelist"}]},"Binding":{"Primary":{"Groupings":[{"Projections":[0,1,2,3,4,5,6,7,8,9,10,11],"ShowItemsWithNoData":[0,1,2,3,4,5,6,7,8,9,10,11],"GroupBy":[0]}]},"Projections":[12],"DataReduction":{"Primary":{"Top":{"Count":1000}}},"Version":1}}}]},"QueryId":"","ApplicationContext":{"DatasetId":"5b547437-24c9-4b22-92de-900b3b3f4785","Sources":[{"ReportId":"964ef513-8ff4-407c-8068-ade1e7f64ca5"}]}}],"cancelQueries":[],"modelId":1959902}'
+  r = requests.post(
+    'https://wabi-australia-southeast-api.analysis.windows.net/public/reports/querydata?synchronous=true',
+    data=q,
+    headers={
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36',
+      'Origin': 'https://app.powerbi.com',
+      'ActivityId': '6fcca753-9700-4b48-b587-353d4ecdde8d',
+      'RequestId': 'ef1fdb86-a106-946a-01c4-c51cec865e73',
+      'X-PowerBI-ResourceKey': '80f2a75d-ece4-49dd-9566-236a6522677c',
+    })
+
+  return r.text
+
 
 def munge_data_to_output(timeseries_data, dates, data_key):
   dates = sorted(timeseries_data.keys())
@@ -419,6 +421,16 @@ def munge_data_to_output(timeseries_data, dates, data_key):
     'keys': keys,
     'subseries': munged_data,
   }
+
+def cache_request(cache_filename, request, force_cache=False):
+  if os.path.exists(cache_filename) or force_cache:
+    with open(cache_filename, 'rb') as f:
+      return f.read()
+  else:
+    result = request()
+    with open(cache_filename, 'wb') as f:
+      f.write(result.encode('utf-8'))
+    return result
 
 if __name__ == '__main__':
   main()
