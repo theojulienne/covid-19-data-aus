@@ -1,21 +1,363 @@
 #!/usr/bin/env python2
 
+import collections
 import datetime
-import re
+import json
 import os
+import re
 
+import bs4
 import requests
+from word2number import w2n
 
-# unfortunately QLD doesn't have a history of testing data. so instead, every poll, we check this page, and save it as the "status as at" date :'(
-status_url = 'https://www.qld.gov.au/health/conditions/health-alerts/coronavirus-covid-19/current-status/current-status-and-contact-tracing-alerts'
-response_body = requests.get(status_url).text
-matches = re.findall(r'Status.*as at ([^<]*)', response_body)
-if len(matches) == 1:
-    status_date = matches[0]
-    parsed_date = datetime.datetime.strptime(status_date, '%d %B %Y').date().isoformat()
-    
-    status_file = 'data_cache/qld/status-tracing/' + parsed_date + '.html'
-    with open(status_file, 'wb') as f:
-        f.write(response_body.encode('utf-8'))
-else:
-    print('WARNING: No "status as at" date was found in the QLD status page, we may be missing data')
+def main():
+  timeseries_data = get_timeseries_data('https://www.health.qld.gov.au/news-events/doh-media-releases')
+  timeseries_data = add_test_data(timeseries_data)
+  timeseries_data = add_manual_data(timeseries_data)
+
+  # Muck with the data to get it into the format that's expected
+  # Fill in the blanks
+  dates = sorted(timeseries_data.keys())
+
+  start_time = min([datetime.datetime.strptime(d, '%Y-%m-%d') for d in dates])
+  end_time = max([datetime.datetime.strptime(d, '%Y-%m-%d') for d in dates])
+
+  curr_time = start_time + datetime.timedelta(days=1)
+  prev_time = start_time
+  while curr_time <= end_time:
+    curr_key = curr_time.strftime('%Y-%m-%d')
+    prev_key = prev_time.strftime('%Y-%m-%d')
+
+    if curr_key not in timeseries_data:
+      timeseries_data[curr_key] = timeseries_data[prev_key]
+    else:
+      timeseries_data[curr_key]['confirmed'] = timeseries_data[curr_key].get('confirmed', timeseries_data[prev_key]['confirmed'])
+      timeseries_data[curr_key]['deaths'] = timeseries_data[curr_key].get('deaths', timeseries_data[prev_key]['deaths'])
+      timeseries_data[curr_key]['tested'] = timeseries_data[curr_key].get('tested', timeseries_data[prev_key]['tested'])
+      timeseries_data[curr_key]['lga'] = timeseries_data[curr_key].get('lga', timeseries_data[prev_key]['lga'])
+
+    prev_time = curr_time
+    curr_time = curr_time + datetime.timedelta(days=1)
+
+  dates = sorted(timeseries_data.keys())
+  values = [timeseries_data[d] for d in dates]
+
+  # Muck with the LGA data to do the right thing
+  lga_data = munge_data_to_output(timeseries_data, dates, 'lga')
+
+  formatted_data = {
+    'timeseries_dates': dates,
+    'total': {
+      'confirmed': [timeseries_data[d]['confirmed'] for d in dates],
+      'tested': [timeseries_data[d]['tested'] for d in dates],
+      'deaths': [timeseries_data[d]['deaths'] for d in dates],
+    },
+    'lga': lga_data,
+  }
+
+  with open('by_state/qld.json', 'w') as f:
+    json.dump(formatted_data, f, indent=2, sort_keys=True)
+
+def get_timeseries_data(url):
+  timeseries_data = collections.defaultdict(lambda: {})
+
+  for post_href in get_posts(url):
+    body = cache_request(
+      'data_cache/qld/%s.html' % ('_' + '_'.join(post_href.split('/')[3:])),
+      lambda: requests.get(post_href).text,
+    )
+
+    soup = bs4.BeautifulSoup(body, 'html.parser')
+    content = soup.select_one('div#content')
+
+    date = datetime.datetime.strptime(content.select_one('h2,h4').text.strip(), '%d %B %Y')
+    body = re.sub(r'[^\x00-\x7F]+', ' ', content.text)
+
+    # Confirmed count
+    confirmed = None
+    confirmed_regexes = [
+      r'.*Queensland has \d+ new confirmed cases of novel coronavirus \(COVID-19\) raising the state total to (?P<confirmed>\d+)[\.,].*',
+      r'.*This takes the state total to (?P<confirmed>\d+)[^\d].*',
+      r'.*There are (?P<confirmed>\d+) confirmed cases of novel coronavirus \(COVID-19\) in Queensland.*',
+      r'.*A total of (?P<confirmed>[\w-]+) people in Queensland have been confirmed with COVID-19.*',
+      r'.*There have now been (?P<confirmed>[\w-]+) people in Queensland(?: confirmed)? with COVID-19.*',
+    ]
+    for r in confirmed_regexes:
+      m = re.match(r, body, re.MULTILINE | re.DOTALL)
+      if m:
+        confirmed = parse_num(m.group('confirmed'))
+        break
+
+    # Death count
+    m = re.match(r'.*Queensland Health can confirm a (?P<deaths>\w+) Queenslander has passed away.*', body, re.MULTILINE | re.DOTALL)
+    deaths = None
+    if m:
+      deaths = parse_ordinal(m.group('deaths'))
+
+    # We don't attempt to parse posts prior to Feb 25 - those we add manually, because they're too
+    # variable. We also exclude a single March 26 post that includes no new information
+    if confirmed is None and deaths is None and date.strftime('%Y-%m-%d') != '2020-03-26' and date > datetime.datetime(year=2020, month=2, day=25):
+      raise Exception('Unparseable post! %s' % date.strftime('%Y-%m-%d'))
+
+    # LGAs
+    lga_data = None
+    lga_table = content.select_one('table')
+    if lga_table:
+      lga_data = {}
+
+      for tr in lga_table.select('tr'):
+        tds = tr.select('td')
+
+        # If it's the header row (or the weirdly malformed footer), skip it
+        if len(tds) == 0 or len(tds) == 1:
+          continue
+
+        lga_name = tds[0].text.strip()
+        lga_count = parse_num(tds[1].text.strip())
+
+        # If it's the footer row, skip it
+        if lga_name != 'Total':
+          lga_data[lga_name] = lga_count
+
+    date_key = date.strftime('%Y-%m-%d')
+    if confirmed is not None:
+      timeseries_data[date_key]['confirmed'] = confirmed
+    if deaths is not None:
+      timeseries_data[date_key]['deaths'] = deaths
+    if lga_table is not None:
+      timeseries_data[date_key]['lga'] = lga_data
+
+  return timeseries_data
+
+def add_test_data(timeseries_data):
+  poll_and_update_test_page()
+
+  test_data_cache_dir = 'data_cache/qld/status-tracing/'
+
+  files = os.listdir(test_data_cache_dir)
+  for filename in files:
+    body = None
+    with open(os.path.join(test_data_cache_dir, filename), 'rb') as f:
+      body = f.read()
+
+    soup = bs4.BeautifulSoup(body, 'html.parser')
+    content = soup.select_one('div#qg-primary-content')
+
+    m = re.match(r'.*Status as at (?P<date>\d+ \w+ \d+)$', content.select_one('h2').text.strip(), re.MULTILINE | re.DOTALL)
+    date = datetime.datetime.strptime(m.group('date'), '%d %B %Y')
+
+    tables = content.select('table')
+    testing_table = tables[-1]
+
+    # Only process the table if we can be sure that we're looking at the right
+    # thing
+    if testing_table.select_one('tr').select('th')[-1].text.strip() == 'Samples tested':
+      for tr in testing_table.select('tr'):
+        tds = tr.select('td')
+
+        # Skip the header row
+        if len(tds) == 0:
+          continue
+
+        if tds[0].text.strip() == 'Total':
+          timeseries_data[date.strftime('%Y-%m-%d')]['tested'] = parse_num(tds[1].text.strip())
+
+  return timeseries_data
+
+# unfortunately QLD doesn't have a history of testing data. so instead, every
+# poll, we check this page, and save it as the "status as at" date :'(
+def poll_and_update_test_page():
+  status_url = 'https://www.qld.gov.au/health/conditions/health-alerts/coronavirus-covid-19/current-status/current-status-and-contact-tracing-alerts'
+  response_body = requests.get(status_url).text
+
+  # Extract the date
+  soup = bs4.BeautifulSoup(response_body, 'html.parser')
+  content = soup.select_one('div#qg-primary-content')
+
+  m = re.match(r'.*Status as at (?P<date>\d+ \w+ \d+)$', content.select_one('h2').text.strip(), re.MULTILINE | re.DOTALL)
+  if m is None:
+    raise Exception('Unable to pull QLD status page date!')
+  date = datetime.datetime.strptime(m.group('date'), '%d %B %Y')
+
+  # Save the current status page
+  status_file = 'data_cache/qld/status-tracing/' + date.strftime('%Y-%m-%d') + '.html'
+  with open(status_file, 'wb') as f:
+    f.write(response_body.encode('utf-8'))
+
+def add_manual_data(timeseries_data):
+  events = {
+    # https://www.health.qld.gov.au/news-events/doh-media-releases/releases/queensland-coronavirus-update
+    '2020-01-28': {
+      'confirmed': 0,
+      'deaths': 0,
+      'tested': 6,
+      'lga': {},
+    },
+    # https://www.health.qld.gov.au/news-events/doh-media-releases/releases/queensland-coronavirus-update-290120
+    '2020-01-29': {
+      'confirmed': 1,
+    },
+    # https://www.health.qld.gov.au/news-events/doh-media-releases/releases/queensland-coronavirus-update2
+    '2020-01-30': {
+      'confirmed': 2,
+    },
+    # https://www.health.qld.gov.au/news-events/doh-media-releases/releases/queensland-coronavirus-update3
+    '2020-02-04': {
+      'confirmed': 3,
+    },
+    # https://www.health.qld.gov.au/news-events/doh-media-releases/releases/queensland-coronavirus-update4
+    '2020-02-05': {
+      'confirmed': 4,
+    },
+    # https://www.health.qld.gov.au/news-events/doh-media-releases/releases/queensland-coronavirus-update5
+    '2020-02-06': {
+      'confirmed': 5,
+    },
+    # https://www.health.qld.gov.au/news-events/doh-media-releases/releases/queensland-coronavirus-update8
+    '2020-02-22': {
+      'confirmed': 7,
+    },
+    # https://www.abc.net.au/news/2020-03-25/queensland-man-dies-from-coronavirus-covid-19/12090804
+    # The first Queenslander died in NSW, shortly after getting off a flight to Sydney
+    '2020-03-15': {
+      'deaths': 1,
+    },
+    # https://web.archive.org/web/20200319063836/https://www.qld.gov.au/health/conditions/health-alerts/coronavirus-covid-19/current-status/current-status-and-contact-tracing-alerts
+    '2020-03-19': {
+      'tested': 27064,
+    },
+    # https://web.archive.org/web/20200320094233/https://www.qld.gov.au/health/conditions/health-alerts/coronavirus-covid-19/current-status/current-status-and-contact-tracing-alerts
+    '2020-03-20': {
+      'tested': 28386,
+    },
+    # https://web.archive.org/web/20200321112923/https://www.qld.gov.au/health/conditions/health-alerts/coronavirus-covid-19/current-status/current-status-and-contact-tracing-alerts
+    '2020-03-21': {
+      'tested': 29867,
+    },
+    # https://web.archive.org/web/20200323042338/https://www.qld.gov.au/health/conditions/health-alerts/coronavirus-covid-19/current-status/current-status-and-contact-tracing-alerts
+    '2020-03-22': {
+      'tested': 32394,
+    },
+    # https://web.archive.org/web/20200324041724/https://www.qld.gov.au/health/conditions/health-alerts/coronavirus-covid-19/current-status/current-status-and-contact-tracing-alerts
+    '2020-03-23': {
+      'tested': 37334,
+    },
+    # No Wayback machine entry for March 24 data
+    # https://web.archive.org/web/20200325173429/https://www.qld.gov.au/health/conditions/health-alerts/coronavirus-covid-19/current-status/current-status-and-contact-tracing-alerts
+    '2020-03-25': {
+      'tested': 38860,
+    },
+    # No Wayback machine entry for March 26 data
+    # https://web.archive.org/web/20200327031520/https://www.qld.gov.au/health/conditions/health-alerts/coronavirus-covid-19/current-status/current-status-and-contact-tracing-alerts
+    '2020-03-27': {
+      'tested': 42965,
+    },
+    # No Wayback machine entry for March 28 data
+    # https://web.archive.org/web/20200329052305/https://www.qld.gov.au/health/conditions/health-alerts/coronavirus-covid-19/current-status/current-status-and-contact-tracing-alerts
+    '2020-03-29': {
+      'tested': 49769,
+    },
+  }
+
+  for date in sorted(events.keys()):
+    event_data = events[date]
+
+    for k in event_data:
+      timeseries_data[date][k] = event_data[k]
+
+  return timeseries_data
+
+def parse_ordinal(ordinal):
+  ordinal = ordinal.replace('first', 'one').replace('second', 'two').replace('third', 'three').replace('ieth', 'y')
+  ordinal = re.sub(r'th$', '', ordinal)
+
+  return parse_num(ordinal)
+
+def parse_num(num):
+  if re.match(r'^[\d,]+$', num):
+    return int(num.replace(',', ''))
+  else:
+    lookups = {
+      'eleven': 11,
+      'twelve': 12,
+      'thirteen': 13,
+      'fourteen': 14,
+      'fifteen': 15,
+      'sixteen': 16,
+      'seventeen': 17,
+      'eighteen': 18,
+      'nineteen': 19,
+    }
+
+    # I can't believe I have to do this, but w2n apparently doesn't support
+    # the teen numbers?! (and silently drops them if the teen num is after a
+    # number it can parse, e.g. "one hundred and eighteen")
+    if num in lookups:
+      return lookups[num]
+    for k in lookups.keys():
+      if k in num:
+        raise Exception('w2n is going to handle this wrong, aborting: %s' % num)
+
+    return w2n.word_to_num(num.replace('-', ' '))
+
+def get_posts(url):
+  posts = []
+
+  page_num = 1
+  curr_year = 2020
+  while curr_year == 2020:
+    page_url = url + '?result_707098_result_page=%d' % page_num
+
+    post_list_soup = bs4.BeautifulSoup(requests.get(page_url).text, 'html.parser')
+    press_zebra = post_list_soup.select_one('div.presszebra')
+
+    for div in press_zebra.select('div'):
+      post_date = datetime.datetime.strptime(div.select_one('span').text.strip(), '%d %B %Y')
+      post_title = div.select_one('a').text
+      post_href = div.select_one('a').attrs['href']
+
+      if 'COVID-19' in post_title or 'coronavirus' in post_title:
+        posts.append(post_href)
+
+      curr_year = post_date.year
+
+    page_num += 1
+
+  return posts
+
+def munge_data_to_output(timeseries_data, dates, data_key):
+  dates = sorted(timeseries_data.keys())
+  values = [timeseries_data[d] for d in dates]
+
+  # Generate a list of all keys for the given data series
+  # There's probably a way to do this with a Python one liner, but I think this
+  # is clearer
+  keyset = set()
+  for v in values:
+    for k in v.get(data_key, {}).keys():
+      keyset.add(k)
+  keys = sorted(keyset)
+
+  munged_data = {}
+  for k in keys:
+    munged_data[k] = []
+    for d in dates:
+      munged_data[k].append(timeseries_data[d].get(data_key, {}).get(k, 0))
+
+  return {
+    'keys': keys,
+    'subseries': munged_data,
+  }
+
+def cache_request(cache_filename, request, force_cache=False):
+  if os.path.exists(cache_filename) or force_cache:
+    with open(cache_filename, 'rb') as f:
+      return f.read()
+  else:
+    result = request()
+    with open(cache_filename, 'wb') as f:
+      f.write(result.encode('utf-8'))
+    return result
+
+if __name__ == '__main__':
+  main()

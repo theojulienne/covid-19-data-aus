@@ -5,6 +5,9 @@ See: https://covid.graphics/
 This repository is aggregated into https://github.com/theojulienne/covid-19-data
 
 Current data sources:
+ * **Queensland**:
+   * https://www.health.qld.gov.au/news-events/doh-media-releases
+   * https://www.qld.gov.au/health/conditions/health-alerts/coronavirus-covid-19/current-status/current-status-and-contact-tracing-alerts
  * **New South Wales:** https://www.health.nsw.gov.au/Pages/default.aspx
  * **Victoria:**
    * https://www.dhhs.vic.gov.au/media-hub-coronavirus-disease-covid-19
