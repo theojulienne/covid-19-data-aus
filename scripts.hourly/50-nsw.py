@@ -165,16 +165,18 @@ def process_source_table(table):
   investigation = 0
 
   for r in table['data'][:-1]:
-    if 'Overseas' in r[0]:
+    cleaned_r0 = re.sub('[^a-zA-z0-9\-\/\s]', '', r[0])
+    cleaned_r0 = re.sub('\s+', ' ', cleaned_r0)
+    if 'Overseas' in cleaned_r0:
       overseas = r[1]
-    elif 'contact of a confirmed case' in r[0] or 'Epi link' in r[0]:
+    elif 'contact of a confirmed case' in cleaned_r0 or 'Epi link' in cleaned_r0:
       contact = r[1]
-    elif 'not identified' in r[0] or 'Unknown' in r[0]:
+    elif 'not identified' in cleaned_r0 or 'Unknown' in cleaned_r0:
       community = r[1]
-    elif 'investigation' in r[0]:
+    elif 'investigation' in cleaned_r0:
       investigation = r[1]
     else:
-      raise 'Unknown source', r[0]
+      raise Exception('Unknown source: {}'.format(cleaned_r0))
 
   return {
     'Overseas acquired': overseas,
