@@ -62,8 +62,9 @@ def get_timeseries_data(url):
   timeseries_data = collections.defaultdict(lambda: {})
 
   for post_href in get_posts(url):
+    cache_fn = 'data_cache/qld/%s.html' % ('_' + '_'.join(post_href.split('/')[3:]))
     body = cache_request(
-      'data_cache/qld/%s.html' % ('_' + '_'.join(post_href.split('/')[3:])),
+      cache_fn,
       lambda: requests.get(post_href).text,
     )
 
@@ -96,8 +97,8 @@ def get_timeseries_data(url):
 
     # We don't attempt to parse posts prior to Feb 25 - those we add manually, because they're too
     # variable. We also exclude a single March 26 post that includes no new information
-    if confirmed is None and deaths is None and date.strftime('%Y-%m-%d') != '2020-03-26' and date > datetime.datetime(year=2020, month=2, day=25):
-      raise Exception('Unparseable post! %s' % date.strftime('%Y-%m-%d'))
+    if confirmed is None and deaths is None and date.strftime('%Y-%m-%d') not in ('2020-03-26', '2020-03-31') and date > datetime.datetime(year=2020, month=2, day=25):
+      raise Exception('Unparseable post! %s (%s)' % (date.strftime('%Y-%m-%d'), cache_fn))
 
     # LGAs
     lga_data = None
