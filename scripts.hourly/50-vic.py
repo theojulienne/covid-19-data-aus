@@ -136,8 +136,9 @@ def get_timeseries_data_from_power_bi():
 def uncompress_powerbi_response(data):
   value_lookup = data['results'][0]['result']['data']['dsr']['DS'][0]['ValueDicts']
   header = data['results'][0]['result']['data']['dsr']['DS'][0]['PH'][0]['DM0'][0]
-  # There's an implicit None here from the group by
-  header['C'] = [None] + header['C']
+  # There's an implicit None here from the group by, not sure how this is meant to be flagged
+  if len(header['C']) != 12:
+    header['C'] = [None] + header['C']
 
   results = []
   for case in data['results'][0]['result']['data']['dsr']['DS'][0]['PH'][0]['DM0']:
@@ -176,7 +177,7 @@ def uncompress_powerbi_response(data):
 
 # Normalized the age groups to buckets of 10 years, as NSW does
 def normalize_age_group(age_group):
-  if age_group is None:
+  if age_group is None or age_group == 'Unknown':
     return None
   elif age_group == '80-84' or age_group == '85+':
     return '80+'
@@ -326,7 +327,7 @@ def parse_fulltext_post(body):
     confirmed = parse_num(m.group('confirmed'))
 
   tested = None
-  m = re.match(r'.*More than (?P<tested>[\d,]+) Victorians have been tested to date.*', body, re.MULTILINE | re.DOTALL)
+  m = re.match(r'.*More than (?P<tested>[\d,]+) (Victorians have been tested|tests have been conducted) to date.*', body, re.MULTILINE | re.DOTALL)
   if m:
     tested = parse_num(m.group('tested'))
 
