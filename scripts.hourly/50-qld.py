@@ -298,8 +298,12 @@ def parse_num(num):
     for k in lookups.keys():
       if k in num:
         raise Exception('w2n is going to handle this wrong, aborting: %s' % num)
-
-    return w2n.word_to_num(num.replace('-', ' '))
+    m = re.match(r'[\d,]+', num)
+    if m:
+      # they started using integers!!!
+      return int(m.group(0).replace(',', ''))
+    else:
+      return w2n.word_to_num(num.replace('-', ' '))
 
 def get_posts(url):
   posts = []
