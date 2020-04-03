@@ -219,7 +219,11 @@ def add_recent_data(timeseries_data):
     layout_region = release.select_one('div.layout__region')
 
     # The date is on the second line of this div
-    date_text = layout_region.select_one('div.first-line').text.strip().split('\n')[1]
+    try:
+      date_text = layout_region.select_one('div.first-line').text.strip().split('\n')[1]
+    except IndexError:
+      print('WARNING: {} was not parseable, please check if it is intended to be a parseable release'.format(href))
+      continue
     # And sometimes it has the day first, sometimes not
     date_text = date_text.split(',')[-1].strip()
     date = datetime.datetime.strptime(date_text, '%d %B %Y')
@@ -322,10 +326,10 @@ def fill_in_blank_data(timeseries_data):
 
 def parse_fulltext_post(body):
   confirmed = None
-  m = re.match(r'.*total number of (?:coronavirus \(COVID-19\) )?cases (in Victoria|increased) (is|to) (?P<confirmed>\d+)[\. ].*', body, re.MULTILINE | re.DOTALL)
+  m = re.match(r'.*total number of (?:coronavirus \(COVID-19\) )?cases (in Victoria|increased) (is|to) (?P<confirmed>[\d,]+).*', body, re.MULTILINE | re.DOTALL)
   if m:
     confirmed = parse_num(m.group('confirmed'))
-
+  
   tested = None
   m = re.match(r'.*More than (?P<tested>[\d,]+) (Victorians have been tested|tests have been conducted) to date.*', body, re.MULTILINE | re.DOTALL)
   if m:
@@ -337,7 +341,7 @@ def parse_fulltext_post(body):
     deaths = parse_num(m.group('deaths'))
 
   recovered = None
-  m = re.match(r'.* (?P<recovered>\d+) people have recovered.*', body, re.MULTILINE | re.DOTALL)
+  m = re.match(r'.* (?P<recovered>[\d,]+) people have recovered.*', body, re.MULTILINE | re.DOTALL)
   if m:
     recovered = parse_num(m.group('recovered'))
 
