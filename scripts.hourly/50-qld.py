@@ -116,7 +116,7 @@ def get_timeseries_data(url):
         tds = tr.select('td')
 
         # If it's the header row (or the weirdly malformed footer), skip it
-        if len(tds) == 0 or len(tds) == 1:
+        if len(tds) == 0 or len(tds) == 1 or 'Total confirmed cases to date' in tds[1].text:
           continue
 
         lga_name = tds[0].text.strip()
@@ -281,8 +281,9 @@ def parse_ordinal(ordinal):
   return parse_num(ordinal)
 
 def parse_num(num):
-  if re.match(r'^[\d,]+', num):
-    return int(num.replace(',', ''))
+  num_match = re.match(r'^[\d,]+', num)
+  if num_match:
+    return int(num_match.group(0).replace(',', ''))
   else:
     lookups = {
       'eleven': 11,
