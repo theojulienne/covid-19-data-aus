@@ -241,7 +241,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
                 
                 
                 
-                                    <div class="alert alert-info" role="alert"><h4>On this page</h4><ul><li><a href="#status">Current status and case numbers</a></li><li><a href="#health-advice">Changes to health and travel advice</a></li><li><a href="#contact-tracing">Contact tracing</a></li><li><a href="#flight-advice">Advice for passengers on a flight with a confirmed case of COVID-19</a></li><li><a href="#symptoms-testing">Symptoms and testing</a></li><li><a href="#travel-advice">Travel advice</a></li></ul></div><h2><span id="status">Status </span>as at 04 April 2020</h2><p style="border: 0px">Queensland has 27 new confirmed cases of novel coronavirus (COVID-19) raising the state total to 900.</p><table style="width: 100%;" id="table48465"><thead><tr><th id="table48465r1c1"><strong style="border: 0px">HHS*</strong></th><th id="table48465r1c2"><strong style="border: 0px">Total confirmed cases to date<sup>1</sup></strong></th></tr></thead><tbody><tr><td headers="table48465r1c1">
+                                    <div class="alert alert-info" role="alert"><h4>On this page</h4><ul><li><a href="#status">Current status and case numbers</a></li><li><a href="#health-advice">Changes to health and travel advice</a></li><li><a href="#contact-tracing">Contact tracing</a></li><li><a href="#flight-advice">Advice for passengers on a flight with a confirmed case of COVID-19</a></li><li><a href="#symptoms-testing">Symptoms and testing</a></li><li><a href="#travel-advice">Travel advice</a></li></ul></div><h2><span id="status">Status </span>as at 04 April 2020</h2><p style="border: 0px">Queensland has 27 new confirmed cases of novel coronavirus (COVID-19) raising the state total to 900.</p><table style="width: 100%;" id="table48465"><thead><tr><th id="table48465r1c1"><strong style="border: 0px">HHS*</strong></th><th id="table48465r1c2"><strong style="border: 0px">Total confirmed cases to date<sup id="disclaimer"><a href="#total-cases-disclaimer">1</a></sup></strong></th></tr></thead><tbody><tr><td headers="table48465r1c1">
          Cairns and Hinterland 
       </td><td headers="table48465r1c2">
          29 
@@ -1207,16 +1207,16 @@ table#table-flights td:nth-child(5) {
 #table51413 td:nth-child(5) { 
   white-space: nowrap;
 }
-/* fix for table heading roll over style */
-/*#disclaimer a:not(.print-content-link):visited, a:not(.print-content-link):visited {
+/* fix for total confirmed cases disclaimer superscript linking in table header showing the default linking colours. */
+#disclaimer a {
+    color: #fff !important;
+  }
+#disclaimer a:not(.print-content-link):visited, #disclaimer a:not(.print-content-link):visited {
     color: #fff !important;
   } 
-#disclaimer a:not(.print-content-link):hover, a:not(.print-content-link):hover {
+#disclaimer a:not(.print-content-link):hover, #disclaimer a:not(.print-content-link):hover {
     color: #fff !important;
   } 
-#disclaimer a:link, thead > tr > td > a:link, thead > tr > th > a:visited, thead > tr > td > a:visited {
-    color: #fff !important;
-  } */
 </style>
                                 
               
@@ -1605,6 +1605,6 @@ table#table-flights td:nth-child(5) {
     
 
 
-<script async type="text/javascript" src="/_Incapsula_Resource?SWJIYLWA=719d34d31c8e3a6e6fffd425f7e032f3&ns=1&cb=489750097"></script>
+<script async type="text/javascript" src="/_Incapsula_Resource?SWJIYLWA=719d34d31c8e3a6e6fffd425f7e032f3&ns=1&cb=1752287723"></script>
 </body>
 </html>
