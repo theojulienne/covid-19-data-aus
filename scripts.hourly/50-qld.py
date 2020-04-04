@@ -71,7 +71,13 @@ def get_timeseries_data(url):
     soup = bs4.BeautifulSoup(body, 'html.parser')
     content = soup.select_one('div#content')
 
-    date = datetime.datetime.strptime(content.select_one('h2,h4').text.strip(), '%d %B %Y')
+    date_space = content.select_one('h2,h4')
+    if not date_space:
+      date_space = content.select_one('#last-updated')
+    date_text = date_space.text.strip()
+    if date_text.startswith('Last updated: '):
+      date_text = date_text[14:]
+    date = datetime.datetime.strptime(date_text, '%d %B %Y')
     body = re.sub(r'[^\x00-\x7F]+', ' ', content.text)
 
     # Confirmed count
@@ -275,7 +281,7 @@ def parse_ordinal(ordinal):
   return parse_num(ordinal)
 
 def parse_num(num):
-  if re.match(r'^[\d,]+$', num):
+  if re.match(r'^[\d,]+', num):
     return int(num.replace(',', ''))
   else:
     lookups = {
@@ -298,12 +304,7 @@ def parse_num(num):
     for k in lookups.keys():
       if k in num:
         raise Exception('w2n is going to handle this wrong, aborting: %s' % num)
-    m = re.match(r'[\d,]+', num)
-    if m:
-      # they started using integers!!!
-      return int(m.group(0).replace(',', ''))
-    else:
-      return w2n.word_to_num(num.replace('-', ' '))
+    return w2n.word_to_num(num.replace('-', ' '))
 
 def get_posts(url):
   posts = []
