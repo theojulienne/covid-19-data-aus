@@ -275,6 +275,12 @@ def add_manual_data(timeseries_data):
   return timeseries_data
 
 def parse_ordinal(ordinal):
+  simple_nums = {
+    'fifth': 5,
+  }
+  if ordinal in simple_nums:
+    return simple_nums[ordinal]
+  
   ordinal = ordinal.replace('first', 'one').replace('second', 'two').replace('third', 'three').replace('ieth', 'y')
   ordinal = re.sub(r'th$', '', ordinal)
 
