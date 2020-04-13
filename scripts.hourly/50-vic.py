@@ -203,6 +203,8 @@ def add_recent_data(timeseries_data):
     # We only care about media releases that will eventually end up on the Vic Health site
     if 'Department of Health and Human Services media release' not in li.text:
       continue
+    if 'repatriation flights' in li.text:
+      continue
     # If the href is to another site, it'll be covered by adding historical data, below, and we
     # should skip it
     if li.select_one('a').attrs['href'][0] != '/':
@@ -226,7 +228,10 @@ def add_recent_data(timeseries_data):
       continue
     # And sometimes it has the day first, sometimes not
     date_text = date_text.split(',')[-1].strip()
-    date = datetime.datetime.strptime(date_text, '%d %B %Y')
+    if date_text.count(' ') >= 2:
+      date = datetime.datetime.strptime(date_text, '%d %B %Y')
+    else:
+      date = datetime.datetime.strptime(date_text, '%d %B')
     body = layout_region.select_one('div.page-content').text.strip()
 
     confirmed, tested, deaths, recovered, hospitalized, icu = parse_fulltext_post(body)
@@ -331,7 +336,7 @@ def parse_fulltext_post(body):
     confirmed = parse_num(m.group('confirmed'))
   
   tested = None
-  m = re.match(r'.*More than (?P<tested>[\d,]+) (Victorians have been tested|tests have been conducted) to date.*', body, re.MULTILINE | re.DOTALL)
+  m = re.match(r'.* (?P<tested>[\d,]+) (Victorians have been tested|tests have been conducted) to date.*', body, re.MULTILINE | re.DOTALL)
   if m:
     tested = parse_num(m.group('tested'))
 
