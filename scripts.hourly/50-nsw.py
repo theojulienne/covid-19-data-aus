@@ -134,8 +134,8 @@ def process_overall_table(table):
     in_progress = 0
 
   # If there's a handy "total" row, use that
-  if len([r[1] for r in table['data'] if r[0].strip() == 'Total']) > 0:
-    total = [r[1] for r in table['data'] if r[0].strip() == 'Total'][0]
+  if len([r[1] for r in table['data'] if r[0].strip() in ['Total', 'Total persons tested']]) > 0:
+    total = [r[1] for r in table['data'] if r[0].strip() in ['Total', 'Total persons tested']][0]
   else:
     total = sum([r[1] for r in table['data']])
 
