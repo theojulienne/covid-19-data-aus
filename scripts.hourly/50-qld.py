@@ -151,6 +151,15 @@ def add_test_data(timeseries_data):
     soup = bs4.BeautifulSoup(body, 'html.parser')
     content = soup.select_one('div#qg-primary-content')
 
+    m = re.match(r'.*Testing update as at (?P<date>[^<]+)', str(content).strip(), re.MULTILINE | re.DOTALL)
+    if m:
+      # new format!
+      sm = re.match(r'.*Total samples tested: .*?(?P<samples>[\d,]+)', content.text.strip(), re.MULTILINE | re.DOTALL)
+      date = datetime.datetime.strptime(m.group('date') + ' 2020', '%d %B %Y')
+      samples = int(sm.group('samples').replace(',', ''))
+      timeseries_data[date.strftime('%Y-%m-%d')]['tested'] = samples
+      continue
+
     m = re.match(r'.*Status as at (?P<date>\d+ \w+ \d+)$', content.select_one('h2').text.strip(), re.MULTILINE | re.DOTALL)
     date = datetime.datetime.strptime(m.group('date'), '%d %B %Y')
 
