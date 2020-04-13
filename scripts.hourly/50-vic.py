@@ -47,7 +47,7 @@ def main():
     'sources': source_data,
   }
 
-  with open('by_state/vic.json', 'w') as f:
+  with open('by_state_partial/vic.json', 'w') as f:
     json.dump(formatted_data, f, indent=2, sort_keys=True)
 
 # If we have a timeseries that ends with None entries, we should remove them, leaving the last known as the last element
@@ -333,7 +333,7 @@ def parse_fulltext_post(body):
   m = re.match(r'.*total number of (?:coronavirus \(COVID-19\) )?cases (in Victoria|increased) (is|to) (?P<confirmed>[\d,]+).*', body, re.MULTILINE | re.DOTALL)
   if m:
     confirmed = parse_num(m.group('confirmed'))
-  
+
   tested = None
   m = re.match(r'.* (?P<tested>[\d,]+) (Victorians have been tested|tests have been conducted) to date.*', body, re.MULTILINE | re.DOTALL)
   if m:

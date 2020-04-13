@@ -55,7 +55,7 @@ def main():
     'lga': lga_data,
   }
 
-  with open('by_state/qld.json', 'w') as f:
+  with open('by_state_partial/qld.json', 'w') as f:
     json.dump(formatted_data, f, indent=2, sort_keys=True)
 
 def get_timeseries_data(url):
@@ -290,7 +290,7 @@ def parse_ordinal(ordinal):
   }
   if ordinal in simple_nums:
     return simple_nums[ordinal]
-  
+
   ordinal = ordinal.replace('first', 'one').replace('second', 'two').replace('third', 'three').replace('ieth', 'y')
   ordinal = re.sub(r'th$', '', ordinal)
 

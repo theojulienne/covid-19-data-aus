@@ -53,7 +53,7 @@ def main():
     'sources': source_data,
   }
 
-  with open('by_state/nsw.json', 'w') as f:
+  with open('by_state_partial/nsw.json', 'w') as f:
     json.dump(formatted_data, f, indent=2, sort_keys=True)
 
 def get_timeseries_data(url):
