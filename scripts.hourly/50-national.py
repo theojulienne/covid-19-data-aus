@@ -1,119 +1,18 @@
 import collections
 import datetime
-import io
 import json
 import os
 import re
 
-from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
-from pdfminer.converter import TextConverter
+from pdfminer.converter import PDFPageAggregator
+from pdfminer.pdfdocument import PDFDocument
 from pdfminer.layout import LAParams
+from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
 from pdfminer.pdfpage import PDFPage
+from pdfminer.pdfparser import PDFParser
+import pdfminer
 import requests
 
-EARLY_FORMAT = [
-  ('state_case', 'WA'),
-  ('state_case', 'NT'),
-  ('state_case', 'SA'),
-  ('state_case', 'QLD'),
-  ('state_case', 'NSW'),
-  ('state_case', 'ACT'),
-  ('state_case', 'TAS'),
-  ('state_case', 'VIC'),
-  ('total', 'count'),
-  ('total', 'deaths'),
-  ('total', 'recovered'),
-  ('icu', 'total'),
-  ('icu', 'ACT'),
-  ('icu', 'NSW'),
-  ('icu', 'NT'),
-  ('icu', 'QLD'),
-  ('icu', 'SA'),
-  ('icu', 'TAS'),
-  ('icu', 'VIC'),
-  ('icu', 'WA'),
-  ('hospitalized', 'total'),
-  ('hospitalized', 'ACT'),
-  ('hospitalized', 'NSW'),
-  ('hospitalized', 'NT'),
-  ('hospitalized', 'QLD'),
-  ('hospitalized', 'SA'),
-  ('hospitalized', 'TAS'),
-  ('hospitalized', 'VIC'),
-  ('hospitalized', 'WA'),
-  ('tests', 'total'),
-  ('test_pos_perc', 'total'),
-  ('tests', 'ACT'),
-  ('tests', 'NSW'),
-  ('tests', 'NT'),
-  ('tests', 'QLD'),
-  ('test_pos_perc', 'ACT'),
-  ('test_pos_perc', 'NSW'),
-  ('test_pos_perc', 'NT'),
-  ('test_pos_perc', 'QLD'),
-  ('tests', 'SA'),
-  ('tests', 'TAS'),
-  ('tests', 'VIC'),
-  ('tests', 'WA'),
-  ('test_pos_perc', 'SA'),
-  ('test_pos_perc', 'TAS'),
-  ('test_pos_perc', 'VIC'),
-  ('test_pos_perc', 'WA'),
-  ('update_time', None),
-  ('info', None),
-]
-
-FORMAT = [
-  ('state_case', 'WA'),
-  ('state_case', 'NT'),
-  ('state_case', 'QLD'),
-  ('state_case', 'SA'),
-  ('state_case', 'VIC'),
-  ('state_case', 'NSW'),
-  ('state_case', 'ACT'),
-  ('state_case', 'TAS'),
-  ('total', 'count'),
-  ('total', 'deaths'),
-  ('total', 'recovered'),
-  ('icu', 'total'),
-  ('icu', 'ACT'),
-  ('icu', 'NSW'),
-  ('icu', 'NT'),
-  ('icu', 'QLD'),
-  ('icu', 'SA'),
-  ('icu', 'TAS'),
-  ('icu', 'VIC'),
-  ('icu', 'WA'),
-  ('hospitalized', 'total'),
-  ('hospitalized', 'ACT'),
-  ('hospitalized', 'NSW'),
-  ('hospitalized', 'NT'),
-  ('hospitalized', 'QLD'),
-  ('hospitalized', 'SA'),
-  ('hospitalized', 'TAS'),
-  ('hospitalized', 'VIC'),
-  ('hospitalized', 'WA'),
-  ('tests', 'total'),
-  ('test_pos_perc', 'total'),
-  ('tests', 'ACT'),
-  ('test_pos_perc', 'ACT'),
-  ('tests', 'NSW'),
-  ('tests', 'NT'),
-  ('tests', 'QLD'),
-  ('test_pos_perc', 'NSW'),
-  ('test_pos_perc', 'NT'),
-  ('test_pos_perc', 'QLD'),
-  ('tests', 'SA'),
-  ('tests', 'TAS'),
-  ('tests', 'VIC'),
-  ('tests', 'WA'),
-  ('test_pos_perc', 'SA'),
-  ('test_pos_perc', 'TAS'),
-  ('test_pos_perc', 'VIC'),
-  ('test_pos_perc', 'WA'),
-  ('update_time', None),
-  ('info', None),
-]
 
 class MissingPdfException(Exception):
   pass
@@ -216,67 +115,149 @@ def parse_pdfs(path):
   return data
 
 def parse_pdf(filename):
-  print filename
-
-  pdf_text = None
+  pdf_text_data = None
   with open(filename, 'rb') as f:
-    pdf_text = extract_pdf_text(f)
-
-  lines = [l.strip() for l in pdf_text.split('\n') if l.strip() != '']
-
-  # I'm sad about this too, but I'm hoping that now that we've explicitly added
-  # deaths to every state, we'll stop mucking with the layout of the state map
-  infographic_num = int(filename.split('.')[-2].split('_')[-1])
-
-  if infographic_num <= 6:
-    fmt = EARLY_FORMAT
-  else:
-    fmt = FORMAT
-
-  if len(lines) != len(fmt):
-    raise Exception('Uh oh, the format has changed')
+    pdf_text_data = extract_pdf_text(f)
 
   data = collections.defaultdict(dict)
   update_time = None
 
-  for ((format_type, format_detail), line) in zip(fmt, lines):
-    if format_type == 'state_case':
-      parsed = re.match(r'^(?P<total>[\d,]+)(?: \((?P<deaths>\d+)\))?$', line).groupdict()
-      data[format_detail]['total'] = parse_num(parsed['total'])
-      data[format_detail]['deaths'] = parse_num(parsed['deaths'] or '0')
-    elif format_type == 'total':
+  icu_values = []
+  hospitalized_values = []
+  top_row_test_values = []
+  bottom_row_test_values = []
+  top_row_test_percs = []
+  bottom_row_test_percs = []
+
+  for left_coord, bottom_coord, text in pdf_text_data:
+    # If we're in the state map
+    if left_coord > 600 and bottom_coord > 350:
+      state = None
+
+      # WA is the farthest left state
+      if left_coord < 650:
+        state = 'WA'
+      # NT is pretty far left, but also high
+      elif left_coord < 675 and bottom_coord > 450:
+        state = 'NT'
+      # SA is also pretty far left, but lower
+      elif left_coord < 675 and bottom_coord > 400:
+        state = 'SA'
+      # Otherwise, if we're still pretty far left, this is Victoria's very
+      # left-floating label
+      elif left_coord < 675:
+        state = 'VIC'
+      # If we're over to the right, the top label is QLD
+      elif bottom_coord > 425:
+        state = 'QLD'
+      # Then NSW
+      elif bottom_coord > 400:
+        state = 'NSW'
+      # Then the ACT
+      elif bottom_coord > 375:
+        state = 'ACT'
+      else:
+        state = 'TAS'
+
+      parsed = re.match(r'^(?P<total>[\d,]+)(?: \((?P<deaths>\d+)\))?$', text).groupdict()
+      data[state]['total'] = parse_num(parsed['total'])
+      data[state]['deaths'] = parse_num(parsed['deaths'] or '0')
+
+    # If this is the national totals panel, skip! We get this same information
+    # from state-specific numbers
+    elif bottom_coord > 470:
       pass
-    elif format_type in ['icu', 'hospitalized', 'tests']:
-      if format_detail != 'total':
-        data[format_detail][format_type] = parse_num(line)
-    elif format_type == 'test_pos_perc':
-      if format_detail != 'total':
-        data[format_detail]['test_pos_perc'] = parse_perc(line)
-    elif format_type == 'update_time':
-      update_time = datetime.datetime.strptime(line, 'Last updated %d %B %Y')
-    elif format_type == 'info':
-      pass
+
+    # If this is the current ICU cases panel
+    elif bottom_coord > 300:
+      # Again, we don't care about the national total callout
+      if bottom_coord > 350:
+        pass
+      # Otherwise, append all ICU values to a list - we'll order these by their
+      # left coordinates, and use this to determine the state
+      else:
+        icu_values.append((left_coord, parse_num(text)))
+
+    # If this is the current hospitalized cases panel
+    elif bottom_coord > 200:
+      # We don't care about the national total callout
+      if bottom_coord > 250:
+        pass
+      # Otherwise, append all hospitalized values to a list - we'll order these
+      # by their left coordinates, and use this to determine the state
+      else:
+        hospitalized_values.append((left_coord, parse_num(text)))
+
+    # If this is the testing panel
+    elif bottom_coord > 25:
+      # We don't care about the totals callouts
+      if bottom_coord > 125:
+        pass
+      # Top row of test numbers
+      elif bottom_coord > 100:
+        top_row_test_values.append((left_coord, parse_num(text)))
+      # Top row of test percentages
+      elif bottom_coord > 75:
+        top_row_test_percs.append((left_coord, parse_perc(text)))
+      # Bottom row of test numbers
+      elif bottom_coord > 50:
+        bottom_row_test_values.append((left_coord, parse_num(text)))
+      # Bottom row of test percentages
+      else:
+        bottom_row_test_percs.append((left_coord, parse_perc(text)))
+
+    # If this is the "last updated" time
+    elif left_coord < 30:
+      update_time = datetime.datetime.strptime(text, 'Last updated %d %B %Y')
+
+    # Otherwise it's just the info section
     else:
-      raise Exception('Unknown format type %s' % format_type)
+      pass
+
+  flatten_and_insert_state_data(data, sorted(icu_values), 'icu')
+  flatten_and_insert_state_data(data, sorted(hospitalized_values), 'hospitalized')
+  flatten_and_insert_state_data(data, sorted(top_row_test_values) + sorted(bottom_row_test_values), 'tests')
+  flatten_and_insert_state_data(data, sorted(top_row_test_percs) + sorted(bottom_row_test_percs), 'test_pos_perc')
 
   return (update_time, data)
 
+def flatten_and_insert_state_data(data, values, value_key):
+  states = ['ACT', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA']
+
+  if len(states) != len(values):
+    raise Exception('Uh oh, missing / extra %s values!' % value_key)
+
+  for state, (_, value) in zip(states, values):
+    data[state][value_key] = value
 
 def extract_pdf_text(file):
-  with io.BytesIO() as return_string:
-    resource_manager = PDFResourceManager()
+  parser = PDFParser(file)
+  resource_manager = PDFResourceManager()
+  device = PDFPageAggregator(resource_manager, laparams=LAParams())
+  interpreter = PDFPageInterpreter(resource_manager, device)
 
-    device = TextConverter(resource_manager, return_string, laparams=LAParams())
-    interpreter = PDFPageInterpreter(resource_manager, device)
+  results = []
+  for page in PDFPage.create_pages(PDFDocument(parser)):
+    interpreter.process_page(page)
+    layout = device.get_result()
+    results += parse_obj(layout._objs)
 
-    for page in PDFPage.get_pages(file, set([0])):
-      interpreter.process_page(page)
-      import code
-      code.interact(local=locals())
+  return results
 
-    device.close()
+def parse_obj(lt_objs):
+  results = []
 
-    return return_string.getvalue()
+  for obj in lt_objs:
+    # if it's a textbox, print text and location
+    if isinstance(obj, pdfminer.layout.LTTextBoxHorizontal):
+      if obj.get_text().strip() != '':
+        results.append((obj.bbox[0], obj.bbox[1], obj.get_text().strip()))
+
+    # if it's a container, recurse
+    elif isinstance(obj, pdfminer.layout.LTFigure):
+      results += parse_obj(obj._objs)
+
+  return results
 
 def cache_request(cache_filename, request, force_cache=False):
   if os.path.exists(cache_filename) or force_cache:
