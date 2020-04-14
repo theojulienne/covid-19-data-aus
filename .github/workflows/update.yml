@@ -24,7 +24,7 @@ jobs:
       max-parallel: 1 # we don't want to fight to commit our changes
       fail-fast: false # we want to run all of them, even if one fails
       matrix:
-        state: ['nsw', 'qld', 'vic', 'wa']
+        state: ['nsw', 'qld', 'vic', 'wa', 'national']
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
