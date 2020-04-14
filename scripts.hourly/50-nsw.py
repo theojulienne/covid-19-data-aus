@@ -44,6 +44,7 @@ def main():
     'timeseries_dates': dates,
     'total': {
       'confirmed': [timeseries_data[d]['confirmed'] for d in dates],
+      'deaths': [timeseries_data[d]['deaths'] for d in dates],
       'tested': [timeseries_data[d]['tested'] for d in dates],
       'current_hospitalized': [timeseries_data[d]['hospitalized'] for d in dates],
       'current_icu': [timeseries_data[d]['icu'] for d in dates],
@@ -84,9 +85,9 @@ def get_timeseries_data(url):
 
       for t in tables:
         parsed_table = parse_table(t)
-
+        
         if parsed_table['headers'][0] == 'Cases':
-          confirmed, tested = process_overall_table(parsed_table)
+          confirmed, tested, deaths = process_overall_table(parsed_table)
 
         elif parsed_table['headers'][0] == 'Age group':
           age_groups = process_age_table(parsed_table)
@@ -104,6 +105,7 @@ def get_timeseries_data(url):
         # Exclude in progress tests from the total tested, since we want
         # this to indicate completed tests
         'tested': tested,
+        'deaths': deaths,
         'hospitalized': hospitalized,
         'icu': icu,
         'ventilators': ventilators,
@@ -126,6 +128,7 @@ def get_timeseries_data(url):
 
 def process_overall_table(table):
   confirmed = [r[1] for r in table['data'] if 'confirmed' in r[0].lower()][0]
+  deaths = ([r[1] for r in table['data'] if 'deaths' in r[0].lower()] + [None])[0] # only available in new pages
 
   potential_in_progress = [r[1] for r in table['data'] if 'investigation' in r[0]]
   if len(potential_in_progress) > 0:
@@ -139,7 +142,7 @@ def process_overall_table(table):
   else:
     total = sum([r[1] for r in table['data']])
 
-  return [confirmed, total - in_progress]
+  return [confirmed, total - in_progress, deaths]
 
 def process_age_table(table):
   age_groups = {}
