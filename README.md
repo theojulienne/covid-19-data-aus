@@ -5,6 +5,8 @@ See: https://covid.graphics/
 This repository is aggregated into https://github.com/theojulienne/covid-19-data
 
 Current data sources:
+ * **National** (used as a fallback if data is not available for a specific state):
+   * https://www.health.gov.au/resources/publications/coronavirus-covid-19-at-a-glance
  * **Queensland**:
    * https://www.health.qld.gov.au/news-events/doh-media-releases
    * https://www.qld.gov.au/health/conditions/health-alerts/coronavirus-covid-19/current-status/current-status-and-contact-tracing-alerts
