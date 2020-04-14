@@ -1,3 +1,4 @@
 beautifulsoup4
+pdfminer==20140328
 requests
 word2number==0.1
