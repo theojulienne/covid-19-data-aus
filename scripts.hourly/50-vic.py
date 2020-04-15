@@ -335,7 +335,7 @@ def parse_fulltext_post(body):
     confirmed = parse_num(m.group('confirmed'))
 
   tested = None
-  m = re.match(r'.* (?P<tested>[\d,]+) (Victorians have been tested|tests have been conducted) to date.*', body, re.MULTILINE | re.DOTALL)
+  m = re.match(r'.* (?P<tested>[\d,]+) (Victorians have been tested to date|tests have been conducted to date|tests have been completed).*', body, re.MULTILINE | re.DOTALL)
   if m:
     tested = parse_num(m.group('tested'))
 
