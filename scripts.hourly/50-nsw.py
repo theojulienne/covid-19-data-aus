@@ -166,6 +166,7 @@ def process_source_table(table):
   contact = 0
   community = 0
   investigation = 0
+  interstate = 0
 
   for r in table['data'][:-1]:
     cleaned_r0 = re.sub('[^a-zA-z0-9\-\/\s]', '', r[0])
@@ -178,11 +179,14 @@ def process_source_table(table):
       community = r[1]
     elif 'investigation' in cleaned_r0:
       investigation = r[1]
+    elif 'Interstate' in cleaned_r0:
+      interstate = r[1]
     else:
       raise Exception('Unknown source: {}'.format(cleaned_r0))
 
   return {
     'Overseas acquired': overseas,
+    'Interstate acquired': interstate,
     'Locally acquired - contact of a confirmed case': contact,
     'Locally acquired - contact not identified': community,
     'Under investigation': investigation,
