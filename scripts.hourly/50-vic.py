@@ -343,6 +343,14 @@ def parse_fulltext_post(body):
   m = re.match(r'.*Victoria has(?: now)? recorded(?: its first)? (?P<deaths>\w+) deaths related to (?:coronavirus|COVID-19).*', body, re.MULTILINE | re.DOTALL)
   if m:
     deaths = parse_num(m.group('deaths'))
+  else:
+    m = re.match(r'.*To date, (?P<deaths>\w+) people have died from coronavirus in Victoria.*', body, re.MULTILINE | re.DOTALL)
+    if m:
+      deaths = parse_num(m.group('deaths'))
+    else:
+      m = re.match(r'.*taking the number of people who have died in Victoria from coronavirus to (?P<deaths>\w+).*', body, re.MULTILINE | re.DOTALL)
+      if m:
+        deaths = parse_num(m.group('deaths'))
 
   recovered = None
   m = re.match(r'.* (?P<recovered>[\d,]+) people have recovered.*', body, re.MULTILINE | re.DOTALL)
