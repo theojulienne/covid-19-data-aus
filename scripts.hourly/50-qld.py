@@ -156,7 +156,7 @@ def add_test_data(timeseries_data):
       # new format!
       sm = re.match(r'.*Total samples tested: .*?(?P<samples>[\d,]+)', content.text.strip(), re.MULTILINE | re.DOTALL)
       date = datetime.datetime.strptime(m.group('date') + ' 2020', '%d %B %Y')
-      samples = int(sm.group('samples').replace(',', ''))
+      samples = parse_num(sm.group('samples'))
       timeseries_data[date.strftime('%Y-%m-%d')]['tested'] = samples
       continue
 
@@ -178,6 +178,11 @@ def add_test_data(timeseries_data):
 
         if tds[0].text.strip() == 'Total':
           timeseries_data[date.strftime('%Y-%m-%d')]['tested'] = parse_num(tds[1].text.strip())
+
+    # Otherwise, if tests are specified by hand
+    sm = re.match(r'.*Total samples tested: .*?(?P<samples>[\d,]+)', content.text.strip(), re.MULTILINE | re.DOTALL)
+    if sm:
+      timeseries_data[date.strftime('%Y-%m-%d')]['tested'] = parse_num(sm.group('samples'))
 
   return timeseries_data
 
