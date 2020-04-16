@@ -41,7 +41,19 @@ def main():
         if k not in state_specific_data['total']:
           state_specific_data['total'][k] = [None for s in state_dates]
 
+      # If the national data goes farther than the state data
       for date in sorted(data.keys()):
+        # If we're missing a date in the state dates, it should be greater
+        # than the state dates that we have
+        if date not in state_dates:
+          assert(date > max(state_dates))
+          state_specific_data['timeseries_dates'].append(date)
+
+          # Fill in the data for each key with blanks
+          for k in state_specific_data['total']:
+            if isinstance(state_specific_data['total'][k][-1], int):
+              state_specific_data['total'][k].append(None)
+
         state_index = state_dates.index(date)
 
         if state_specific_data['total']['confirmed'][state_index] is None:
