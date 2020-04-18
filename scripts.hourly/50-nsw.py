@@ -561,8 +561,11 @@ def munge_data_to_output(timeseries_data, dates, data_key):
   munged_data = {}
   for k in keys:
     munged_data[k] = []
+    last_value = 0
     for d in dates:
-      munged_data[k].append(timeseries_data[d].get(data_key, {}).get(k, 0))
+      value = timeseries_data[d].get(data_key, {}).get(k, last_value)
+      munged_data[k].append(value)
+      last_value = value
 
   return {
     'keys': keys,
