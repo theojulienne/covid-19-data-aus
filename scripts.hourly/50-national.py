@@ -228,10 +228,16 @@ def parse_pdf(filename):
     else:
       pass
 
-  flatten_and_insert_state_data(data, sorted(set(icu_values)), 'icu')
-  flatten_and_insert_state_data(data, sorted(set(hospitalized_values)), 'hospitalized')
-  flatten_and_insert_state_data(data, sorted(set(top_row_test_values)) + sorted(set(bottom_row_test_values)), 'tests')
-  flatten_and_insert_state_data(data, sorted(set(top_row_test_percs)) + sorted(set(bottom_row_test_percs)), 'test_pos_perc')
+  # This is stupid. However, starting with 2020-04-17, there's an extra,
+  # seemingly hidden "11" for Queensland in these values. I assume someone sent
+  # a text field to the back, without realizing it. Remove it.
+  if update_time >= datetime.datetime(year=2020, month=4, day=17) and (118.22, 11) in icu_values:
+    icu_values.remove((118.22, 11))
+
+  flatten_and_insert_state_data(data, sorted(icu_values), 'icu')
+  flatten_and_insert_state_data(data, sorted(hospitalized_values), 'hospitalized')
+  flatten_and_insert_state_data(data, sorted(top_row_test_values) + sorted(bottom_row_test_values), 'tests')
+  flatten_and_insert_state_data(data, sorted(top_row_test_percs) + sorted(bottom_row_test_percs), 'test_pos_perc')
 
   return (update_time, data)
 
@@ -239,6 +245,7 @@ def flatten_and_insert_state_data(data, values, value_key):
   states = ['ACT', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA']
 
   if len(states) != len(values):
+    print values
     raise Exception('Uh oh, missing / extra %s values!' % value_key)
 
   for state, (_, value) in zip(states, values):
