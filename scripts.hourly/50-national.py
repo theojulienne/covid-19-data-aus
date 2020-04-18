@@ -228,10 +228,10 @@ def parse_pdf(filename):
     else:
       pass
 
-  flatten_and_insert_state_data(data, sorted(icu_values), 'icu')
-  flatten_and_insert_state_data(data, sorted(hospitalized_values), 'hospitalized')
-  flatten_and_insert_state_data(data, sorted(top_row_test_values) + sorted(bottom_row_test_values), 'tests')
-  flatten_and_insert_state_data(data, sorted(top_row_test_percs) + sorted(bottom_row_test_percs), 'test_pos_perc')
+  flatten_and_insert_state_data(data, sorted(set(icu_values)), 'icu')
+  flatten_and_insert_state_data(data, sorted(set(hospitalized_values)), 'hospitalized')
+  flatten_and_insert_state_data(data, sorted(set(top_row_test_values)) + sorted(set(bottom_row_test_values)), 'tests')
+  flatten_and_insert_state_data(data, sorted(set(top_row_test_percs)) + sorted(set(bottom_row_test_percs)), 'test_pos_perc')
 
   return (update_time, data)
 
