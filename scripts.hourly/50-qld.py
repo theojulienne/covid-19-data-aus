@@ -85,7 +85,7 @@ def get_timeseries_data(url):
     confirmed_regexes = [
       r'.*Queensland has \d+ new confirmed cases of novel coronavirus \(COVID-19\) raising the state total to (?P<confirmed>\d+)[\.,].*',
       r'.*Queensland has ([\d\w]+) new confirmed cases of coronavirus \(COVID-19\)(?:,[^,]+,)? raising the state total to (?P<confirmed>\d+)[\.,].*',
-      r'.*This takes the state total to (?P<confirmed>\d+)[^\d].*',
+      r'.*((This takes the)|(The current)) state total ((to)|(remains at)) (?P<confirmed>[\d,]+)[^\d,].*',
       r'.*There are (?P<confirmed>\d+) confirmed cases of novel coronavirus \(COVID-19\) in Queensland.*',
       r'.*A total of (?P<confirmed>[\w-]+) people in Queensland have been confirmed with COVID-19.*',
       r'.*There have now been (?P<confirmed>[\w-]+) people in Queensland(?: confirmed)? with COVID-19.*',
