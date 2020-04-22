@@ -173,9 +173,20 @@ def parse_pdf(filename):
       else:
         state = 'TAS'
 
-      parsed = re.match(r'^(?P<total>[\d,]+)(?: \((?P<deaths>\d+)\))?$', text).groupdict()
-      data[state]['total'] = parse_num(parsed['total'])
-      data[state]['deaths'] = parse_num(parsed['deaths'] or '0')
+      # There really shouldn't be a newline here! But if there is, because
+      # Reasons....
+      valid_value_found = False
+      for line in text.split('\n'):
+        m = re.match(r'^(?P<total>[\d,]+)(?: \((?P<deaths>\d+)\))?$', line)
+
+        if m:
+          parsed = m.groupdict()
+          valid_value_found = True
+          data[state]['total'] = parse_num(parsed['total'])
+          data[state]['deaths'] = parse_num(parsed['deaths'] or '0')
+
+      if not valid_value_found:
+        raise Exception('Uh oh! Couldn\'t parse %s' % repr(text))
 
     # If this is the national totals panel, skip! We get this same information
     # from state-specific numbers

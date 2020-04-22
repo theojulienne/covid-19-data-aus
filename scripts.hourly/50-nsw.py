@@ -88,7 +88,7 @@ def get_timeseries_data(url):
 
       for t in tables:
         parsed_table = parse_table(t)
-        
+
         if parsed_table['headers'][0] in 'Cases':
           confirmed, tested, deaths = process_overall_table(parsed_table)
 
@@ -97,7 +97,7 @@ def get_timeseries_data(url):
 
         elif parsed_table['headers'][0] == 'Source':
           sources = process_source_table(parsed_table)
-        
+
         elif parsed_table['headers'][0] == 'Outcome':
           recovered = process_outcome_table(parsed_table)
 
@@ -188,15 +188,15 @@ def process_source_table(table):
     cleaned_r0 = re.sub('[^a-zA-z0-9\-\/\s]', '', r[0])
     cleaned_r0 = re.sub('\s+', ' ', cleaned_r0)
     if 'Overseas' in cleaned_r0:
-      overseas = r[1]
+      overseas = r[-1]
     elif 'contact of a confirmed case' in cleaned_r0 or 'Epi link' in cleaned_r0:
-      contact = r[1]
+      contact = r[-1]
     elif 'not identified' in cleaned_r0 or 'Unknown' in cleaned_r0:
-      community = r[1]
+      community = r[-1]
     elif 'investigation' in cleaned_r0:
-      investigation = r[1]
+      investigation = r[-1]
     elif 'Interstate' in cleaned_r0:
-      interstate = r[1]
+      interstate = r[-1]
     else:
       raise Exception('Unknown source: {}'.format(cleaned_r0))
 
