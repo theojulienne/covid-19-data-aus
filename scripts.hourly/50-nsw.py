@@ -46,6 +46,7 @@ def main():
       'confirmed': [timeseries_data[d]['confirmed'] for d in dates],
       'deaths': [timeseries_data[d]['deaths'] for d in dates],
       'tested': [timeseries_data[d]['tested'] for d in dates],
+      'recovered': [timeseries_data[d]['recovered'] for d in dates],
       'current_hospitalized': [timeseries_data[d]['hospitalized'] for d in dates],
       'current_icu': [timeseries_data[d]['icu'] for d in dates],
       'current_ventilators': [timeseries_data[d]['ventilators'] for d in dates],
@@ -83,10 +84,12 @@ def get_timeseries_data(url):
       age_groups = None
       sources = None
 
+      confirmed = tested = deaths = recovered = None
+
       for t in tables:
         parsed_table = parse_table(t)
         
-        if parsed_table['headers'][0] == 'Cases':
+        if parsed_table['headers'][0] in 'Cases':
           confirmed, tested, deaths = process_overall_table(parsed_table)
 
         elif parsed_table['headers'][0] == 'Age group':
@@ -94,8 +97,12 @@ def get_timeseries_data(url):
 
         elif parsed_table['headers'][0] == 'Source':
           sources = process_source_table(parsed_table)
+        
+        elif parsed_table['headers'][0] == 'Outcome':
+          recovered = process_outcome_table(parsed_table)
+
         else:
-          raise 'Unknown table! %s' % repr(parsed_table['headers'])
+          raise Exception('Unknown table in %s! %s' % (cache_filename, repr(parsed_table['headers'])))
 
       body = soup.select_one('div.maincontent').text
       hospitalized, icu, ventilators = parse_full_body(body)
@@ -106,6 +113,7 @@ def get_timeseries_data(url):
         # this to indicate completed tests
         'tested': tested,
         'deaths': deaths,
+        'recovered': recovered,
         'hospitalized': hospitalized,
         'icu': icu,
         'ventilators': ventilators,
@@ -126,9 +134,17 @@ def get_timeseries_data(url):
 
   return timeseries_data
 
+def process_outcome_table(table):
+  recovered = [r[1] for r in table['data'] if r[0].lower() == 'recovered'][0]
+  not_recovered = [r[1] for r in table['data'] if r[0].lower() == 'not recovered'][0]
+  too_soon = [r[1] for r in table['data'] if 'data not available' in r[0].lower()][0]
+  active = not_recovered + too_soon
+
+  return recovered
+
 def process_overall_table(table):
   confirmed = [r[1] for r in table['data'] if 'confirmed' in r[0].lower()][0]
-  deaths = ([r[1] for r in table['data'] if 'deaths' in r[0].lower()] + [None])[0] # only available in new pages
+  deaths = ([r[1] for r in table['data'] if 'deaths' in r[0].lower() or 'died' in r[0].lower()] + [None])[0] # only available in new pages
 
   potential_in_progress = [r[1] for r in table['data'] if 'investigation' in r[0]]
   if len(potential_in_progress) > 0:
