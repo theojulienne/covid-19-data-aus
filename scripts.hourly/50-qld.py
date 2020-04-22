@@ -71,6 +71,9 @@ def get_timeseries_data(url):
     soup = bs4.BeautifulSoup(body, 'html.parser')
     content = soup.select_one('div#content')
 
+    if 'Safeguards in place to minimise Cairns COVID-19 risk' in soup.select_one('title').text:
+      continue
+
     date_space = content.select_one('h2,h4')
     if not date_space:
       date_space = content.select_one('#last-updated')
@@ -83,8 +86,8 @@ def get_timeseries_data(url):
     # Confirmed count
     confirmed = None
     confirmed_regexes = [
-      r'.*Queensland has \d+ new confirmed cases of novel coronavirus \(COVID-19\) raising the state total to (?P<confirmed>\d+)[\.,].*',
-      r'.*Queensland has ([\d\w]+) new confirmed cases of coronavirus \(COVID-19\)(?:,[^,]+,)? raising the state total to (?P<confirmed>\d+)[\.,].*',
+      r'.*Queensland has ([\d\w]+) new confirmed cases of novel coronavirus \(COVID-19\) raising the state total to (?P<confirmed>[\d,]+)[\.,].*',
+      r'.*Queensland has ([\d\w]+) new confirmed cases of coronavirus \(COVID-19\)(?:,[^,]+,)? raising the state total to (?P<confirmed>[\d,]+)[\.,].*',
       r'.*((This takes the)|(The current)) state total ((to)|(remains at)) (?P<confirmed>[\d,]+)[^\d,].*',
       r'.*There are (?P<confirmed>\d+) confirmed cases of novel coronavirus \(COVID-19\) in Queensland.*',
       r'.*A total of (?P<confirmed>[\w-]+) people in Queensland have been confirmed with COVID-19.*',
@@ -161,6 +164,8 @@ def add_test_data(timeseries_data):
       continue
 
     m = re.match(r'.*Status as at (?P<date>\d+ \w+ \d+)$', content.select_one('h2').text.strip(), re.MULTILINE | re.DOTALL)
+    if m is None:
+      m = re.match(r'.*Last updated: .* (?P<date>\d+ \w+ \d+)$', content.select_one('.qh-facts-header p').text.strip(), re.MULTILINE | re.DOTALL)
     date = datetime.datetime.strptime(m.group('date'), '%d %B %Y')
 
     tables = content.select('table')
@@ -184,6 +189,16 @@ def add_test_data(timeseries_data):
     if sm:
       timeseries_data[date.strftime('%Y-%m-%d')]['tested'] = parse_num(sm.group('samples'))
 
+    # And finally, the shiny new fact page that has useful information
+    fact_bar = content.select_one('.qh-fact-wrapper')
+    if fact_bar:
+      confirmed = parse_num(fact_bar.select('.cases span')[0].text.strip())
+      tested = parse_num(fact_bar.select('.tested span')[0].text.strip())
+      deaths = parse_num(fact_bar.select('.lost span')[0].text.strip())
+      timeseries_data[date.strftime('%Y-%m-%d')]['confirmed'] = confirmed
+      timeseries_data[date.strftime('%Y-%m-%d')]['tested'] = tested
+      timeseries_data[date.strftime('%Y-%m-%d')]['deaths'] = deaths
+
   return timeseries_data
 
 # unfortunately QLD doesn't have a history of testing data. so instead, every
@@ -197,6 +212,8 @@ def poll_and_update_test_page():
   content = soup.select_one('div#qg-primary-content')
 
   m = re.match(r'.*Status as at (?P<date>\d+ \w+ \d+)$', content.select_one('h2').text.strip(), re.MULTILINE | re.DOTALL)
+  if m is None:
+    m = re.match(r'.*Last updated: .* (?P<date>\d+ \w+ \d+)$', content.select_one('.qh-facts-header p').text.strip(), re.MULTILINE | re.DOTALL)
   if m is None:
     raise Exception('Unable to pull QLD status page date!')
   date = datetime.datetime.strptime(m.group('date'), '%d %B %Y')
