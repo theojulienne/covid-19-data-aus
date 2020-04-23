@@ -207,10 +207,10 @@ def add_recent_data(timeseries_data):
       continue
     # If the href is to another site, it'll be covered by adding historical data, below, and we
     # should skip it
-    if li.select_one('a').attrs['href'][0] != '/':
+    uri = li.select_one('a').attrs['href'].replace('https://www.dhhs.vic.gov.au/', '/')
+    if uri[0] != '/':
       continue
 
-    uri = li.select_one('a').attrs['href']
     href = 'https://www.dhhs.vic.gov.au' + uri
     response_body = cache_request(
       'data_cache/vic/%s.html' % uri.replace('/', '_'),
