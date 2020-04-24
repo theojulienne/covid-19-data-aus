@@ -236,24 +236,28 @@ def add_recent_data(timeseries_data):
     confirmed, tested, deaths, recovered, hospitalized, icu = parse_fulltext_post(body)
 
     date_key = date.strftime('%Y-%m-%d')
+    date_keys = [date_key]
+    if date_key == '2020-04-15':
+      date_keys.append('2020-04-16') # they missed this date, copy it.
 
-    # We should always be able to get the number of people confirmed and tested
-    if tested is not None and confirmed is not None:
-      timeseries_data[date_key]['tested'] = tested
-      # We overwrite the summed individual cases here, if we have an official
-      # media release
-      timeseries_data[date_key]['confirmed'] = confirmed
-    else:
-      raise Exception('Trouble parsing! %s' % date)
+    for date_key in date_keys:
+      # We should always be able to get the number of people confirmed and tested
+      if tested is not None and confirmed is not None:
+        timeseries_data[date_key]['tested'] = tested
+        # We overwrite the summed individual cases here, if we have an official
+        # media release
+        timeseries_data[date_key]['confirmed'] = confirmed
+      else:
+        raise Exception('Trouble parsing! %s' % date)
 
-    if deaths is not None:
-      timeseries_data[date_key]['deaths'] = deaths
-    if recovered is not None:
-      timeseries_data[date_key]['recovered'] = recovered
-    if hospitalized is not None:
-      timeseries_data[date_key]['hospitalized'] = hospitalized
-    if icu is not None:
-      timeseries_data[date_key]['icu'] = icu
+      if deaths is not None:
+        timeseries_data[date_key]['deaths'] = deaths
+      if recovered is not None:
+        timeseries_data[date_key]['recovered'] = recovered
+      if hospitalized is not None:
+        timeseries_data[date_key]['hospitalized'] = hospitalized
+      if icu is not None:
+        timeseries_data[date_key]['icu'] = icu
 
   return timeseries_data
 
