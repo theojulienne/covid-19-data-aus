@@ -110,7 +110,7 @@ def get_timeseries_data_from_power_bi():
   # convert to that
   start_time = min([datetime.datetime.strptime(d, '%Y-%m-%d') for d in timeseries_data.keys()])
   end_time = max([datetime.datetime.strptime(d, '%Y-%m-%d') for d in timeseries_data.keys()])
-
+  
   curr_time = start_time + datetime.timedelta(days=1)
   prev_time = start_time
   while curr_time <= end_time:
@@ -129,7 +129,7 @@ def get_timeseries_data_from_power_bi():
 
     prev_time = curr_time
     curr_time += datetime.timedelta(days=1)
-
+  
   return timeseries_data
 
 # Uncompresses the PowerBI response back to a normal set of Python tuples
@@ -210,58 +210,64 @@ def add_recent_data(timeseries_data):
     uri = li.select_one('a').attrs['href'].replace('https://www.dhhs.vic.gov.au/', '/')
     if uri[0] != '/':
       continue
+    
+    timeseries_data = add_dhhs_release(timeseries_data, uri)
+  
+  timeseries_data = add_dhhs_release(timeseries_data, '/coronavirus-update-victoria-24-april-2020')
+  return timeseries_data
 
-    href = 'https://www.dhhs.vic.gov.au' + uri
-    response_body = cache_request(
-      'data_cache/vic/%s.html' % uri.replace('/', '_'),
-      lambda: requests.get(href).text
-    )
+def add_dhhs_release(timeseries_data, uri):
+  href = 'https://www.dhhs.vic.gov.au' + uri
+  response_body = cache_request(
+    'data_cache/vic/%s.html' % uri.replace('/', '_'),
+    lambda: requests.get(href).text
+  )
 
-    release = bs4.BeautifulSoup(response_body, 'html.parser')
-    layout_region = release.select_one('div.layout__region')
+  release = bs4.BeautifulSoup(response_body, 'html.parser')
+  layout_region = release.select_one('div.layout__region')
 
-    # The date is on the second line of this div
-    try:
-      first_line = layout_region.select_one('div.first-line')
-      if first_line:
-        date_text = first_line.text.strip().split('\n')[1]
-      else:
-        date_text = release.select_one('h1').text.strip().split(' - ')[1]
-    except IndexError:
-      print('WARNING: {} was not parseable, please check if it is intended to be a parseable release'.format(href))
-      continue
-    # And sometimes it has the day first, sometimes not
-    date_text = date_text.split(',')[-1].strip()
-    if date_text.count(' ') < 2:
-      date_text = date_text + ' 2020'
-    date = datetime.datetime.strptime(date_text, '%d %B %Y')
-    body = layout_region.select_one('div.page-content').text.strip()
+  # The date is on the second line of this div
+  try:
+    first_line = layout_region.select_one('div.first-line')
+    if first_line:
+      date_text = first_line.text.strip().split('\n')[1]
+    else:
+      date_text = release.select_one('h1').text.strip().split(' - ')[1]
+  except IndexError:
+    print('WARNING: {} was not parseable, please check if it is intended to be a parseable release'.format(href))
+    return timeseries_data
+  # And sometimes it has the day first, sometimes not
+  date_text = date_text.split(',')[-1].strip()
+  if date_text.count(' ') < 2:
+    date_text = date_text + ' 2020'
+  date = datetime.datetime.strptime(date_text, '%d %B %Y')
+  body = layout_region.select_one('div.page-content').text.strip()
 
-    confirmed, tested, deaths, recovered, hospitalized, icu = parse_fulltext_post(body)
+  confirmed, tested, deaths, recovered, hospitalized, icu = parse_fulltext_post(body)
 
-    date_key = date.strftime('%Y-%m-%d')
-    date_keys = [date_key]
-    if date_key == '2020-04-15':
-      date_keys.append('2020-04-16') # they missed this date, copy it.
+  date_key = date.strftime('%Y-%m-%d')
+  date_keys = [date_key]
+  if date_key == '2020-04-15':
+    date_keys.append('2020-04-16') # they missed this date, copy it.
 
-    for date_key in date_keys:
-      # We should always be able to get the number of people confirmed and tested
-      if tested is not None and confirmed is not None:
-        timeseries_data[date_key]['tested'] = tested
-        # We overwrite the summed individual cases here, if we have an official
-        # media release
-        timeseries_data[date_key]['confirmed'] = confirmed
-      else:
-        raise Exception('Trouble parsing! %s' % date)
+  for date_key in date_keys:
+    # We should always be able to get the number of people confirmed and tested
+    if tested is not None and confirmed is not None:
+      timeseries_data[date_key]['tested'] = tested
+      # We overwrite the summed individual cases here, if we have an official
+      # media release
+      timeseries_data[date_key]['confirmed'] = confirmed
+    else:
+      raise Exception('Trouble parsing! %s' % date)
 
-      if deaths is not None:
-        timeseries_data[date_key]['deaths'] = deaths
-      if recovered is not None:
-        timeseries_data[date_key]['recovered'] = recovered
-      if hospitalized is not None:
-        timeseries_data[date_key]['hospitalized'] = hospitalized
-      if icu is not None:
-        timeseries_data[date_key]['icu'] = icu
+    if deaths is not None:
+      timeseries_data[date_key]['deaths'] = deaths
+    if recovered is not None:
+      timeseries_data[date_key]['recovered'] = recovered
+    if hospitalized is not None:
+      timeseries_data[date_key]['hospitalized'] = hospitalized
+    if icu is not None:
+      timeseries_data[date_key]['icu'] = icu
 
   return timeseries_data
 
