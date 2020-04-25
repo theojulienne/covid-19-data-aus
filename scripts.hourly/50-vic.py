@@ -222,7 +222,11 @@ def add_recent_data(timeseries_data):
 
     # The date is on the second line of this div
     try:
-      date_text = layout_region.select_one('div.first-line').text.strip().split('\n')[1]
+      first_line = layout_region.select_one('div.first-line')
+      if first_line:
+        date_text = first_line.text.strip().split('\n')[1]
+      else:
+        date_text = release.select_one('h1').text.strip().split(' - ')[1]
     except IndexError:
       print('WARNING: {} was not parseable, please check if it is intended to be a parseable release'.format(href))
       continue
