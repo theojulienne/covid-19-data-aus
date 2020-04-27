@@ -210,6 +210,9 @@ def add_recent_data(timeseries_data):
     uri = li.select_one('a').attrs['href'].replace('https://www.dhhs.vic.gov.au/', '/')
     if uri[0] != '/':
       continue
+
+    # this almost looks like a real one, but isn't
+    if 'cho-victoria-2-april-2020' in uri: continue
     
     timeseries_data = add_dhhs_release(timeseries_data, uri)
   
@@ -227,13 +230,16 @@ def add_dhhs_release(timeseries_data, uri):
   layout_region = release.select_one('div.layout__region')
 
   # The date is on the second line of this div
+  date_text = None
   try:
     first_line = layout_region.select_one('div.first-line')
     if first_line:
       date_text = first_line.text.strip().split('\n')[1]
-    else:
-      date_text = release.select_one('h1').text.strip().split(' - ')[1]
   except IndexError:
+    pass # this is fine, we just try again with the h1
+  if date_text is None:
+    date_text = release.select_one('h1').text.strip().split(' - ')[1]
+  if date_text is None:
     print('WARNING: {} was not parseable, please check if it is intended to be a parseable release'.format(href))
     return timeseries_data
   # And sometimes it has the day first, sometimes not
@@ -244,7 +250,7 @@ def add_dhhs_release(timeseries_data, uri):
   body = layout_region.select_one('div.page-content').text.strip()
 
   confirmed, tested, deaths, recovered, hospitalized, icu = parse_fulltext_post(body)
-
+  
   date_key = date.strftime('%Y-%m-%d')
   date_keys = [date_key]
   if date_key == '2020-04-15':
@@ -258,7 +264,7 @@ def add_dhhs_release(timeseries_data, uri):
       # media release
       timeseries_data[date_key]['confirmed'] = confirmed
     else:
-      raise Exception('Trouble parsing! %s' % date)
+      raise Exception('Trouble parsing! %s' % uri)
 
     if deaths is not None:
       timeseries_data[date_key]['deaths'] = deaths
