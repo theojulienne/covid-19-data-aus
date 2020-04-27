@@ -85,7 +85,7 @@ def get_timeseries_data(url):
       sources = None
 
       confirmed = tested = deaths = recovered = None
-
+      print("Processing: {}".format(cache_filename))
       for t in tables:
         parsed_table = parse_table(t)
 
@@ -135,30 +135,33 @@ def get_timeseries_data(url):
   return timeseries_data
 
 def process_outcome_table(table):
-  recovered = [r[1] for r in table['data'] if r[0].lower() == 'recovered'][0]
-  not_recovered = [r[1] for r in table['data'] if r[0].lower() == 'not recovered'][0]
-  too_soon = [r[1] for r in table['data'] if 'data not available' in r[0].lower()][0]
+  recovered = [r[1] for r in table['data'] if clean_whitespace(r[0]).lower() == 'recovered'][0]
+  not_recovered = [r[1] for r in table['data'] if clean_whitespace(r[0]).lower() == 'not recovered'][0]
+  too_soon = [r[1] for r in table['data'] if 'data not available' in clean_whitespace(r[0]).lower()][0]
   active = not_recovered + too_soon
 
   return recovered
 
 def process_overall_table(table):
-  confirmed = [r[1] for r in table['data'] if 'confirmed' in r[0].lower()][0]
+  confirmed = [r[1] for r in table['data'] if 'confirmed' in clean_whitespace(r[0]).lower()][0]
   deaths = ([r[1] for r in table['data'] if 'deaths' in r[0].lower() or 'died' in r[0].lower()] + [None])[0] # only available in new pages
 
-  potential_in_progress = [r[1] for r in table['data'] if 'investigation' in r[0]]
+  potential_in_progress = [r[1] for r in table['data'] if 'investigation' in clean_whitespace(r[0])]
   if len(potential_in_progress) > 0:
     in_progress = potential_in_progress[0]
   else:
     in_progress = 0
 
   # If there's a handy "total" row, use that
-  if len([r[1] for r in table['data'] if r[0].strip() in ['Total', 'Total persons tested']]) > 0:
-    total = [r[1] for r in table['data'] if r[0].strip() in ['Total', 'Total persons tested']][0]
+  if len([r[1] for r in table['data'] if clean_whitespace(r[0]) in ['Total', 'Total persons tested']]) > 0:
+    total = [r[1] for r in table['data'] if clean_whitespace(r[0]) in ['Total', 'Total persons tested']][0]
   else:
     total = sum([r[1] for r in table['data']])
 
   return [confirmed, total - in_progress, deaths]
+
+def clean_whitespace(txt):
+  return re.sub(r'\s+', ' ', txt.replace('&nbsp;', ' '))
 
 def process_age_table(table):
   age_groups = {}
