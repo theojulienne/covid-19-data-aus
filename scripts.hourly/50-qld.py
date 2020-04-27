@@ -105,30 +105,40 @@ def get_timeseries_data(url):
     if m:
       deaths = parse_ordinal(m.group('deaths'))
 
-    # We don't attempt to parse posts prior to Feb 25 - those we add manually, because they're too
-    # variable. We also exclude a single March 26 post that includes no new information
-    if confirmed is None and deaths is None and date.strftime('%Y-%m-%d') not in ('2020-03-26', '2020-03-31') and date > datetime.datetime(year=2020, month=2, day=25):
-      raise Exception('Unparseable post! %s (%s)' % (date.strftime('%Y-%m-%d'), cache_fn))
-
     # LGAs
     lga_data = None
     lga_table = content.select_one('table')
     if lga_table:
       lga_data = {}
+      header = None
 
       for tr in lga_table.select('tr'):
         tds = tr.select('td')
 
         # If it's the header row (or the weirdly malformed footer), skip it
-        if len(tds) == 0 or len(tds) == 1 or 'Total confirmed cases to date' in tds[1].text:
+        if len(tds) > 1 and 'Total confirmed cases to date' in tds[-1].text:
+          header = tds
+          continue
+        if len(tds) == 0 or len(tds) == 1:
           continue
 
         lga_name = tds[0].text.strip()
-        lga_count = parse_num(tds[1].text.strip())
+        lga_count = parse_num(tds[-1].text.strip())
 
-        # If it's the footer row, skip it
-        if lga_name != 'Total':
+        if lga_name == 'Total':
+          # If it's the footer row, count it for totals
+          if confirmed is None:
+            confirmed = lga_count
+          if deaths is None and header is not None and header[-2].text.strip() == 'Deaths':
+            deaths = parse_num(tds[-2].text.strip())
+        else:
+          # otherwise it's an LGA
           lga_data[lga_name] = lga_count
+
+    # We don't attempt to parse posts prior to Feb 25 - those we add manually, because they're too
+    # variable. We also exclude a single March 26 post that includes no new information
+    if confirmed is None and deaths is None and date.strftime('%Y-%m-%d') not in ('2020-03-26', '2020-03-31') and date > datetime.datetime(year=2020, month=2, day=25):
+      raise Exception('Unparseable post! %s (%s)' % (date.strftime('%Y-%m-%d'), cache_fn))
 
     date_key = date.strftime('%Y-%m-%d')
     if confirmed is not None:
