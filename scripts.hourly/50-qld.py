@@ -62,6 +62,7 @@ def get_timeseries_data(url):
   timeseries_data = collections.defaultdict(lambda: {})
 
   for post_href in get_posts(url):
+    print("Parsing post: {}".format(post_href))
     cache_fn = 'data_cache/qld/%s.html' % ('_' + '_'.join(post_href.split('/')[3:]))
     body = cache_request(
       cache_fn,
@@ -104,25 +105,27 @@ def get_timeseries_data(url):
     deaths = None
     if m:
       deaths = parse_ordinal(m.group('deaths'))
-
+    
     # LGAs
     lga_data = None
     lga_table = content.select_one('table')
     if lga_table:
       lga_data = {}
       header = None
+      first = True
 
       for tr in lga_table.select('tr'):
-        tds = tr.select('td')
+        tds = tr.select('td,th')
 
         # If it's the header row (or the weirdly malformed footer), skip it
-        if len(tds) > 1 and 'Total confirmed cases to date' in tds[-1].text:
+        if first:
           header = tds
+          first = False
           continue
         if len(tds) == 0 or len(tds) == 1:
           continue
 
-        lga_name = tds[0].text.strip()
+        lga_name = clean_whitespace(tds[0].text.strip())
         lga_count = parse_num(tds[-1].text.strip())
 
         if lga_name == 'Total':
@@ -149,6 +152,9 @@ def get_timeseries_data(url):
       timeseries_data[date_key]['lga'] = lga_data
 
   return timeseries_data
+
+def clean_whitespace(txt):
+  return re.sub(r'\s+', ' ', txt.replace('&nbsp;', ' '))
 
 def add_test_data(timeseries_data):
   poll_and_update_test_page()
