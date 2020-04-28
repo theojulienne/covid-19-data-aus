@@ -92,7 +92,7 @@ def get_timeseries_data(url):
         if parsed_table['headers'][0] in 'Cases':
           confirmed, tested, deaths = process_overall_table(parsed_table)
 
-        elif parsed_table['headers'][0] == 'Age group':
+        elif parsed_table['headers'][0].lower() == 'age group':
           age_groups = process_age_table(parsed_table)
 
         elif parsed_table['headers'][0] == 'Source':
@@ -136,7 +136,7 @@ def get_timeseries_data(url):
 
 def process_outcome_table(table):
   recovered = [r[1] for r in table['data'] if clean_whitespace(r[0]).lower() == 'recovered'][0]
-  not_recovered = [r[1] for r in table['data'] if clean_whitespace(r[0]).lower() == 'not recovered'][0]
+  not_recovered = [r[1] for r in table['data'] if clean_whitespace(r[0]).lower() in ['not recovered', 'not yet recovered']][0]
   too_soon = [r[1] for r in table['data'] if 'data not available' in clean_whitespace(r[0]).lower()][0]
   active = not_recovered + too_soon
 
