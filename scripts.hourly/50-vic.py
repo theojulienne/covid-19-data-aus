@@ -88,6 +88,9 @@ def get_timeseries_data_from_power_bi():
   for c in cases:
     age_group, _gender, _case_num, _clinician_status, acquired, _acquired_country, event_date, _clinician_status_n, _acquired_n, _acquired_country_n, _count, _lga = c
 
+    if event_date < datetime.datetime(year=2019, month=6, day=1):
+      # lol data entry is hard
+      event_date = datetime.datetime(year=event_date.year + 1, month=event_date.month, day=event_date.day, hour=event_date.hour, minute=event_date.minute)
     event_date_key = event_date.strftime('%Y-%m-%d')
 
     # Normalize age groups into bunches of 10, as NSW does
