@@ -249,7 +249,10 @@ def add_dhhs_release(timeseries_data, uri):
   date_text = date_text.split(',')[-1].strip()
   if date_text.count(' ') < 2:
     date_text = date_text + ' 2020'
-  date = datetime.datetime.strptime(date_text, '%d %B %Y')
+  try:
+    date = datetime.datetime.strptime(date_text, '%d %B %Y')
+  except ValueError:
+    date = datetime.datetime.strptime(date_text, '%A %d %B %Y')
   body = layout_region.select_one('div.page-content').text.strip()
 
   confirmed, tested, deaths, recovered, hospitalized, icu = parse_fulltext_post(body)
