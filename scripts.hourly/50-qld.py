@@ -185,20 +185,21 @@ def add_test_data(timeseries_data):
     date = datetime.datetime.strptime(m.group('date'), '%d %B %Y')
 
     tables = content.select('table')
-    testing_table = tables[-1]
+    if len(tables) > 0:
+      testing_table = tables[-1]
 
-    # Only process the table if we can be sure that we're looking at the right
-    # thing
-    if testing_table.select_one('tr').select('th')[-1].text.strip() == 'Samples tested':
-      for tr in testing_table.select('tr'):
-        tds = tr.select('td')
+      # Only process the table if we can be sure that we're looking at the right
+      # thing
+      if testing_table.select_one('tr').select('th')[-1].text.strip() == 'Samples tested':
+        for tr in testing_table.select('tr'):
+          tds = tr.select('td')
 
-        # Skip the header row
-        if len(tds) == 0:
-          continue
+          # Skip the header row
+          if len(tds) == 0:
+            continue
 
-        if tds[0].text.strip() == 'Total':
-          timeseries_data[date.strftime('%Y-%m-%d')]['tested'] = parse_num(tds[1].text.strip())
+          if tds[0].text.strip() == 'Total':
+            timeseries_data[date.strftime('%Y-%m-%d')]['tested'] = parse_num(tds[1].text.strip())
 
     # Otherwise, if tests are specified by hand
     sm = re.match(r'.*Total samples tested: .*?(?P<samples>[\d,]+)', content.text.strip(), re.MULTILINE | re.DOTALL)
