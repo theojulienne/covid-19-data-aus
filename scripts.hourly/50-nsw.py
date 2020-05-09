@@ -89,6 +89,11 @@ def get_timeseries_data(url):
       for t in tables:
         parsed_table = parse_table(t)
 
+        if 'Confirmed cases' in parsed_table['headers'][0]:
+          parsed_table['data'] = [parsed_table['headers']] + parsed_table['data']
+          parsed_table['data'][0][-1] = parse_datum(clean_text(parsed_table['data'][0][-1]))
+          parsed_table['headers'] = ['Cases', 'Count']
+
         if parsed_table['headers'][0] in 'Cases':
           confirmed, tested, deaths = process_overall_table(parsed_table)
 
