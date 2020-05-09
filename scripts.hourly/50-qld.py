@@ -105,7 +105,7 @@ def get_timeseries_data(url):
     deaths = None
     if m:
       deaths = parse_ordinal(m.group('deaths'))
-    
+
     # LGAs
     lga_data = None
     lga_table = content.select_one('table')
@@ -115,7 +115,7 @@ def get_timeseries_data(url):
       first = True
 
       for tr in lga_table.select('tr'):
-        tds = tr.select('td,th')
+        tds = tr.select('th,td')
 
         # If it's the header row (or the weirdly malformed footer), skip it
         if first:
