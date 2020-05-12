@@ -166,7 +166,7 @@ def add_test_data(timeseries_data):
     body = None
     with open(os.path.join(test_data_cache_dir, filename), 'rb') as f:
       body = f.read()
-
+    
     soup = bs4.BeautifulSoup(body, 'html.parser')
     content = soup.select_one('div#qg-primary-content')
 
@@ -179,7 +179,10 @@ def add_test_data(timeseries_data):
       timeseries_data[date.strftime('%Y-%m-%d')]['tested'] = samples
       continue
 
-    m = re.match(r'.*Status as at (?P<date>\d+ \w+ \d+)$', content.select_one('h2').text.strip(), re.MULTILINE | re.DOTALL)
+    m = None
+    h2 = content.select_one('h2')
+    if h2:
+      m = re.match(r'.*Status as at (?P<date>\d+ \w+ \d+)$', h2.text.strip(), re.MULTILINE | re.DOTALL)
     if m is None:
       m = re.match(r'.*Last updated: .* (?P<date>\d+ \w+ \d+)$', content.select_one('.qh-facts-header p').text.strip(), re.MULTILINE | re.DOTALL)
     date = datetime.datetime.strptime(m.group('date'), '%d %B %Y')
@@ -221,14 +224,17 @@ def add_test_data(timeseries_data):
 # unfortunately QLD doesn't have a history of testing data. so instead, every
 # poll, we check this page, and save it as the "status as at" date :'(
 def poll_and_update_test_page():
-  status_url = 'https://www.qld.gov.au/health/conditions/health-alerts/coronavirus-covid-19/current-status/current-status-and-contact-tracing-alerts'
+  status_url = 'https://www.qld.gov.au/health/conditions/health-alerts/coronavirus-covid-19/current-status/statistics'
   response_body = requests.get(status_url).text
 
   # Extract the date
   soup = bs4.BeautifulSoup(response_body, 'html.parser')
   content = soup.select_one('div#qg-primary-content')
 
-  m = re.match(r'.*Status as at (?P<date>\d+ \w+ \d+)$', content.select_one('h2').text.strip(), re.MULTILINE | re.DOTALL)
+  m = None
+  h2 = content.select_one('h2')
+  if h2:
+    m = re.match(r'.*Status as at (?P<date>\d+ \w+ \d+)$', h2.text.strip(), re.MULTILINE | re.DOTALL)
   if m is None:
     m = re.match(r'.*Last updated: .* (?P<date>\d+ \w+ \d+)$', content.select_one('.qh-facts-header p').text.strip(), re.MULTILINE | re.DOTALL)
   if m is None:
