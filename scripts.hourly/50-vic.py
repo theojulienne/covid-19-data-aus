@@ -357,6 +357,8 @@ def fill_in_blank_data(timeseries_data):
 def parse_fulltext_post(body):
   confirmed = None
   m = re.match(r'.*total number of (?:coronavirus \(COVID-19\) )?cases (in Victoria|increased) (is|to) (?P<confirmed>[\d,]+).*', body, re.MULTILINE | re.DOTALL)
+  if not m:
+    m = re.match(r'.*Of the total (?P<confirmed>[\d,]+) cases.*', body, re.MULTILINE | re.DOTALL)
   if m:
     confirmed = parse_num(m.group('confirmed'))
 
