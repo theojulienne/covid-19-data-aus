@@ -151,6 +151,7 @@ def parse_pdfs(path):
   return data
 
 def parse_pdf(filename):
+  print('Processing: {}'.format(filename))
   pdf_text_data = None
   with open(filename, 'rb') as f:
     pdf_text_data = extract_pdf_text(f)
@@ -165,7 +166,13 @@ def parse_pdf(filename):
   top_row_test_percs = []
   bottom_row_test_percs = []
 
-  for left_coord, bottom_coord, text in pdf_text_data:
+  OLD_WIDTH = 841.920
+  OLD_HEIGHT = 595.320
+
+  for rel_left_coord, rel_bottom_coord, text in pdf_text_data:
+    left_coord = rel_left_coord * OLD_WIDTH
+    bottom_coord = rel_bottom_coord * OLD_HEIGHT
+
     # If we're in the state map
     if left_coord > 600 and bottom_coord > 350:
       state = None
@@ -220,6 +227,9 @@ def parse_pdf(filename):
       # Again, we don't care about the national total callout
       if bottom_coord > 350:
         pass
+      # end of the table, after this is the age care table
+      elif left_coord > 250:
+        pass
       # Otherwise, append all ICU values to a list - we'll order these by their
       # left coordinates, and use this to determine the state
       else:
@@ -230,6 +240,9 @@ def parse_pdf(filename):
       # We don't care about the national total callout
       if bottom_coord > 250:
         pass
+      # end of the table, after this is the age care table
+      elif left_coord > 250:
+        pass
       # Otherwise, append all hospitalized values to a list - we'll order these
       # by their left coordinates, and use this to determine the state
       else:
@@ -239,6 +252,9 @@ def parse_pdf(filename):
     elif bottom_coord > 25:
       # We don't care about the totals callouts
       if bottom_coord > 125:
+        pass
+      # end of the table, after this is the age care table
+      elif left_coord > 250:
         pass
       # Top row of test numbers
       elif bottom_coord > 100:
@@ -294,22 +310,28 @@ def extract_pdf_text(file):
   for page in PDFPage.create_pages(PDFDocument(parser)):
     interpreter.process_page(page)
     layout = device.get_result()
-    results += parse_obj(layout._objs)
+    width = layout.bbox[2]
+    # we expect the same w/h ratio as the original PDF size
+    height = layout.bbox[2] / 841.92 * 595.32
+    height_surplus = (layout.bbox[3] - height)
+    # weird bars on top/bottom which we'll 'offset' half away
+    print('height surplus: {}'.format(height_surplus))
+    results += parse_obj(layout._objs, width, height, height_surplus/2)
 
   return results
 
-def parse_obj(lt_objs):
+def parse_obj(lt_objs, width, height, y_offset):
   results = []
 
   for obj in lt_objs:
     # if it's a textbox, print text and location
     if isinstance(obj, pdfminer.layout.LTTextBoxHorizontal):
       if obj.get_text().strip() != '':
-        results.append((obj.bbox[0], obj.bbox[1], obj.get_text().strip()))
+        results.append((obj.bbox[0] / width, (obj.bbox[1] - y_offset) / height, obj.get_text().strip()))
 
     # if it's a container, recurse
     elif isinstance(obj, pdfminer.layout.LTFigure):
-      results += parse_obj(obj._objs)
+      results += parse_obj(obj._objs, width, height, y_offset)
 
   return results
 
