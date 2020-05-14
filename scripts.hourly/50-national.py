@@ -5,6 +5,7 @@ import datetime
 import json
 import os
 import re
+import traceback
 
 from pdfminer.converter import PDFPageAggregator
 from pdfminer.pdfdocument import PDFDocument
@@ -14,6 +15,7 @@ from pdfminer.pdfpage import PDFPage
 from pdfminer.pdfparser import PDFParser
 import pdfminer
 import requests
+import bs4
 
 
 class MissingPdfException(Exception):
@@ -90,26 +92,40 @@ def main():
       json.dump(state_specific_data, f, indent=2, sort_keys=True)
 
 def get_pdfs():
-  # There's actually a 0 pdf, but it's from the same day as 1, so we skip it
-  i = 1
-  month = 4
-  while True:
-    # If this scraper survives past June, we can update this
-    if month > 6:
-      break
+  when = datetime.date(2020, 4, 5)
+  while when <= datetime.date.today():
+    curr = when
+    when += datetime.timedelta(days=1)
 
-    path = 'https://www.health.gov.au/sites/default/files/documents/2020/%s/coronavirus-covid-19-at-a-glance-coronavirus-covid-19-at-a-glance-infographic_%d.pdf' % (str(month).zfill(2), i)
-    cache_filename = os.path.join('data_cache', 'national', os.path.basename(path))
-
+    path = 'https://www.health.gov.au/resources/publications/coronavirus-covid-19-at-a-glance-{}'.format(curr.strftime('%-d-%B-%Y').lower())
+    cache_filename = os.path.join('data_cache', 'national', os.path.basename(path) + '.html')
     try:
-      cache_request(
+      data = cache_request(
         cache_filename,
         lambda: request_pdf(path),
       )
-      i += 1
-
     except MissingPdfException:
-      month += 1
+      print('No pointer page for {}'.format(curr))
+      continue
+
+    # and the actual PDF from that next
+    pointer_to_pdf = bs4.BeautifulSoup(data, 'html.parser')
+    links = pointer_to_pdf.select('a.health-file__link')
+    if len(links) == 0: continue
+    link = links[0]
+    href = link['href']
+
+    cache_filename = os.path.join('data_cache', 'national', os.path.basename(href))
+    try:
+      data = cache_request(
+        cache_filename,
+        lambda: request_pdf(href),
+      )
+    except MissingPdfException:
+      print('No PDF for {}'.format(curr))
+      continue
+
+    print(href)
 
 def request_pdf(href):
   r = requests.get(href)
@@ -123,8 +139,14 @@ def parse_pdfs(path):
   data = {}
 
   for basename in os.listdir(path):
-    curr_day, curr_day_data = parse_pdf(os.path.join(path, basename))
-    data[curr_day.strftime('%Y-%m-%d')] = curr_day_data
+    if not basename.endswith('.pdf'): continue
+    try:
+      curr_day, curr_day_data = parse_pdf(os.path.join(path, basename))
+    except Exception as e:
+      print('Failed to parse {}: {}'.format(basename, e))
+      traceback.print_exc()
+    else:
+      data[curr_day.strftime('%Y-%m-%d')] = curr_day_data
 
   return data
 
