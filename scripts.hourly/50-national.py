@@ -111,7 +111,9 @@ def get_pdfs():
     # and the actual PDF from that next
     pointer_to_pdf = bs4.BeautifulSoup(data, 'html.parser')
     links = pointer_to_pdf.select('a.health-file__link')
-    if len(links) == 0: continue
+    if len(links) == 0:
+      print('No link on page for {}'.format(curr))
+      continue
     link = links[0]
     href = link['href']
 
@@ -338,12 +340,15 @@ def parse_obj(lt_objs, width, height, y_offset):
 def cache_request(cache_filename, request, force_cache=False):
   if os.path.exists(cache_filename) or force_cache:
     with open(cache_filename, 'rb') as f:
-      return f.read()
-  else:
-    result = request()
-    with open(cache_filename, 'wb') as f:
-      f.write(result)
-    return result
+      ret = f.read()
+      # don't allow "pretend 404" pages
+      if 'We have publications on different health topics for you to access' not in ret:
+        return ret
+
+  result = request()
+  with open(cache_filename, 'wb') as f:
+    f.write(result)
+  return result
 
 def parse_perc(perc):
   return float(perc.replace('%', '')) / 100.0
