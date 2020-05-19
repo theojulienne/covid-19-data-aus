@@ -400,8 +400,21 @@ def parse_fulltext_post(body):
   return (confirmed, tested, deaths, recovered, hospital, icu)
 
 def parse_num(num):
+  overrides = {
+    'eleven': 11,
+    'twelve': 12,
+    'thirteen': 13,
+    'fourteen': 14,
+    'fifteen': 15,
+    'sixteen': 16,
+    'seventeen': 17,
+    'eighteen': 18,
+    'nineteen': 19,
+  }
   if re.match(r'^[\d,]+$', num):
     return int(num.replace(',', ''))
+  elif num in overrides:
+    return overrides[num]
   else:
     return w2n.word_to_num(num)
 
