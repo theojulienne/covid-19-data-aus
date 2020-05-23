@@ -220,6 +220,7 @@ def add_recent_data(timeseries_data):
     timeseries_data = add_dhhs_release(timeseries_data, uri)
   
   timeseries_data = add_dhhs_release(timeseries_data, '/coronavirus-update-victoria-24-april-2020')
+  timeseries_data = add_dhhs_release(timeseries_data, '/coronavirus-update-victoria-21-may-2020')
   return timeseries_data
 
 def add_dhhs_release(timeseries_data, uri):
@@ -270,7 +271,7 @@ def add_dhhs_release(timeseries_data, uri):
       # media release
       timeseries_data[date_key]['confirmed'] = confirmed
     else:
-      raise Exception('Trouble parsing! %s' % uri)
+      raise Exception('Trouble parsing! {} (confirmed={}, tested={}, deaths={}, recovered={}, hospitalized={}, icu={})'.format(uri, confirmed, tested, deaths, recovered, hospitalized, icu))
 
     if deaths is not None:
       timeseries_data[date_key]['deaths'] = deaths
@@ -355,6 +356,8 @@ def fill_in_blank_data(timeseries_data):
   return timeseries_data
 
 def parse_fulltext_post(body):
+  body = body.replace(u'\xa0', ' ')
+
   confirmed = None
   m = re.match(r'.*total number of (?:coronavirus \(COVID-19\) )?cases (in Victoria|increased) (is|to) (?P<confirmed>[\d,]+).*', body, re.MULTILINE | re.DOTALL)
   if not m:
@@ -396,7 +399,7 @@ def parse_fulltext_post(body):
   m = re.match(r'.*including (?P<icu>\w+) patients in intensive care.*', body, re.MULTILINE | re.DOTALL)
   if m:
     icu = parse_num(m.group('icu'))
-
+  
   return (confirmed, tested, deaths, recovered, hospital, icu)
 
 def parse_num(num):
