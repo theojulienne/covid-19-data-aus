@@ -2343,7 +2343,7 @@
       22, 
       20, 
       20, 
-      null, 
+      20, 
       null
     ], 
     "current_icu": [
@@ -2465,7 +2465,7 @@
       5, 
       3, 
       3, 
-      null, 
+      1, 
       null
     ], 
     "current_ventilators": [
