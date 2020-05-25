@@ -383,6 +383,15 @@ var cumulativeCases = {
                     beginAtZero: true
                 }
             }]
+        },
+        tooltips: {
+            callbacks: {
+                afterBody: function(tooltipItem, data) {        
+                    if (tooltipItem[0].xLabel == "25 May") {
+                        return ["","Total case count revised down due to ongoing","investigations and case review."];
+                    }
+                }
+            }
         }
     }
 };
@@ -1684,6 +1693,6 @@ if (viewport) viewport.setAttribute('content',"width=device-width, initial-scale
     
 
 
-<script async type="text/javascript" src="/_Incapsula_Resource?SWJIYLWA=719d34d31c8e3a6e6fffd425f7e032f3&ns=1&cb=1225162277"></script>
+<script async type="text/javascript" src="/_Incapsula_Resource?SWJIYLWA=719d34d31c8e3a6e6fffd425f7e032f3&ns=1&cb=1171576730"></script>
 </body>
 </html>
