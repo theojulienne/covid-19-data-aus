@@ -55,7 +55,7 @@
 <meta name="DCTERMS.publisher" scheme="AGLSTERMS.AglsAgent" content="corporateName=The State of Queensland; jurisdiction=Queensland" />
 <meta name="DCTERMS.creator" content="c=AU; o=The State of Queensland;">
 <meta name="DCTERMS.created" content="2020-04-15">
-<meta name="DCTERMS.modified" content="2020-05-28">
+<meta name="DCTERMS.modified" content="2020-05-29">
 <meta name="DCTERMS.description" content="Detailed information about COVID-19 cases in Queensland including maps of cases by HHS and LGA, likely source of infection, age and gender, testing completed, and self-quarantine notices issued.">
 <meta name="DCTERMS.identifier" scheme="DCTERMS.URI" content="https://www.qld.gov.au/health/conditions/health-alerts/coronavirus-covid-19/current-status/statistics">
 <meta name="DCTERMS.jurisdiction" scheme="AGLSTERMS.AglsJuri" content="Queensland">
@@ -293,9 +293,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     </ul>
     <li><a href="#datacaveats">Data caveats</a></li>
   </ul>
-</div><h3 id="casesummary">Case summary</h3>
-
-<table id="QLD_Cases" class="table table-bordered">
+</div><h3 id="casesummary">Case summary</h3><table id="QLD_Cases" class="table table-bordered">
 <thead><tr>
 <th>Cases</th>
 <th>Total</th>
@@ -330,12 +328,14 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <td>7</td>
 </tr>
 <tr>
-<th>Cases of First Nations people<a href="#firstnationscaveat">*</a></th>
+<th>Cases of First Nations people<a href="#firstnationscaveat">*</a>
+</th>
 <td>9</td>
 </tr>
 </tbody>
 <caption>Data as at 28/05/2020. Refer to <a href="#datacaveats">data caveats</a>.</caption>
-</table><h3 id="cumulative">Total cases&mdash;cumulative graph</h3>
+</table>
+<h3 id="cumulative">Total cases&mdash;cumulative graph</h3>
 <p>The graph below shows the total number of confirmed cases in Queensland as they increase over time, as per the daily case number announcements.</p>
 
 <script>
@@ -440,9 +440,8 @@ $(function() {
 		button_log.removeClass('btn-secondary').addClass('btn-default');
 	});
 });
-</script><h3 id="caseoverview"><span id="cases-overview">Cases</span> overview by Hospital and Health Service and region</h3>
-
-<table xmlns:qh="https://www.health.qld.gov.au/schema/QLD_Cases_By_HHS" id="QLD_Cases_By_HHS" class="table table-bordered">
+</script><h3 id="caseoverview">
+<span id="cases-overview">Cases</span> overview by Hospital and Health Service and region</h3><table id="QLD_Cases_By_HHS" class="table table-bordered">
 <thead><tr>
 <th>Region</th>
 <th>Total cases</th>
@@ -586,15 +585,14 @@ $(function() {
 </tr>
 </tbody>
 <caption>Data as at 28/05/2020. Refer to <a href="#datacaveats">data caveats</a>.</caption>
-</table><h3 id="casebyhhsmap">Cases by Hospital and Health Service</h3>
+</table>
+<h3 id="casebyhhsmap">Cases by Hospital and Health Service</h3>
 
 <figure class="qg-nofig qh-map">
 <img src="https://www.qld.gov.au/__data/assets/image/0024/127923/Total_by_HHS-fs8.png?v=0.5.0" class="mw-100" title="A heatmap of Queensland COVID-19 cases by Hostital and Health Service" />
-<figcaption>Data as at 26/05/2020. Refer to <a href="#datacaveats">data caveats</a>.</figcaption>
+<figcaption>Data as at 28/05/2020. Refer to <a href="#datacaveats">data caveats</a>.</figcaption>
 </figure>
-<h3 id="casebysource">Likely source of infection</h3>
-
-<table id="QLD_Cases_Sources_Of_Infection" class="table table-bordered">
+<h3 id="casebysource">Likely source of infection</h3><table id="QLD_Cases_Sources_Of_Infection" class="table table-bordered">
 <tbody>
 <tr>
 <th>Confirmed cases</th>
@@ -622,10 +620,8 @@ $(function() {
 </tr>
 </tbody>
 <caption>Data as at 28/05/2020. Refer to <a href="#datacaveats">data caveats</a>.</caption>
-</table><h3 id="casebylga">Cases by Local Government Area and likely source of infection</h3>
-
-
-<table xmlns:qh="https://www.health.qld.gov.au/schema/LGA" id="LGA" class="table table-bordered">
+</table>
+<h3 id="casebylga">Cases by Local Government Area and likely source of infection</h3><table id="LGA" class="table table-bordered">
 <thead><tr>
 <th>Local Government Area</th>
 <th>Overseas acquired</th>
@@ -944,9 +940,7 @@ $(function() {
 </tr>
 </tbody>
 <caption>C = Council, RC = Regional Council, S = Shire<br>Data as at 28/05/2020. Refer to <a href="#datacaveats">data caveats</a>.</caption>
-</table>
-
-<script>
+</table><script>
 $('#LGA tr td:first-child').each(function(i,e) {
   var lgaName = $(e).text().split('(');
   var titled = lgaName[0].replace(
@@ -968,11 +962,12 @@ $('#LGA tr td:first-child').each(function(i,e) {
     }
   }
 });
-</script><h3 id="casebylgamap">Cases by Local Government Area</h3>
+</script>
+<h3 id="casebylgamap">Cases by Local Government Area</h3>
 
 <figure class="qg-nofig qh-map">
-    <img src="https://www.qld.gov.au/__data/assets/image/0025/127924/Total_by_LGA-fs8.png?v=0.7.0" class="mw-100" title="A heatmap of Queensland COVID-19 cases by Local Government Area" />
-    <figcaption>Data as at 26/05/2020. Refer to <a href="#datacaveats">data caveats</a>.</figcaption>
+    <img src="https://www.qld.gov.au/__data/assets/image/0025/127924/Total_by_LGA-fs8.png?v=0.8.0" class="mw-100" title="A heatmap of Queensland COVID-19 cases by Local Government Area" />
+    <figcaption>Data as at 28/05/2020. Refer to <a href="#datacaveats">data caveats</a>.</figcaption>
 </figure>
 
 <h3 id="casebylgaandsourcemap">Cases by Local Government Area and likely source of infection</h3>
@@ -982,35 +977,35 @@ $('#LGA tr td:first-child').each(function(i,e) {
         <h3 id="casebylgaandsourcemap1">Locally Acquired&#8212;no known contact</h3>
         <figure class="qg-nofig qh-map">
             <img src="https://www.qld.gov.au/__data/assets/image/0022/127921/Locally_Acquired_No_Known_Contact_by_LGA-fs8.png?v=0.4.0" class="mw-100" title="A heatmap of Queensland's locally acquired COVID-19 cases by Local Government Area" />
-            <figcaption>Data as at 26/05/2020. Refer to <a href="#datacaveats">data caveats</a>.</figcaption>
+            <figcaption>Data as at 28/05/2020. Refer to <a href="#datacaveats">data caveats</a>.</figcaption>
         </figure>
     </div>
     <div class="col-12 col-sm-6 qh-map-right">
         <h3  id="casebylgaandsourcemap2">Overseas acquired</h3>
         <figure class="qg-nofig qh-map">
             <img src="https://www.qld.gov.au/__data/assets/image/0023/127922/Overseas_Acquired_by_LGA-fs8.png?v=0.6.0" class="mw-100" title="A heatmap of Queensland's overseas acquired COVID-19 cases by Local Government Area " />
-            <figcaption>Data as at 26/05/2020. Refer to <a href="#datacaveats">data caveats</a>.</figcaption>
+            <figcaption>Data as at 28/05/2020. Refer to <a href="#datacaveats">data caveats</a>.</figcaption>
         </figure>
     </div>
     <div class="col-12 col-sm-6 qh-map-left">
         <h3  id="casebylgaandsourcemap3">Locally Acquired&#8212;close contact with confirmed case</h3>
         <figure class="qg-nofig qh-map">
             <img src="https://www.qld.gov.au/__data/assets/image/0021/127920/Locally_Acquired_Close_Contact_With_Confirmed_Case_by_LGA-fs8.png?v=0.4.0" class="mw-100" title="A heatmap of Queensland's locally acquired COVID-19 cases by Local Government Area where there was close contact with a confirmed case" />
-            <figcaption>Data as at 26/05/2020. Refer to <a href="#datacaveats">data caveats</a>.</figcaption>
+            <figcaption>Data as at 28/05/2020. Refer to <a href="#datacaveats">data caveats</a>.</figcaption>
         </figure>
     </div>
     <div class="col-12 col-sm-6 qh-map-right">
         <h3  id="casebylgaandsourcemap4">Under investigation</h3>
         <figure class="qg-nofig qh-map">
-            <img src="https://www.qld.gov.au/__data/assets/image/0026/127925/Under_Investigation_by_LGA.PNG?v=0.10.0" class="mw-100" title="A heatmap of Queensland's under investigation COVID-19 cases by Local Government Area" />
-            <figcaption>Data as at 26/05/2020. Refer to <a href="#datacaveats">data caveats</a>.</figcaption>
+            <img src="https://www.qld.gov.au/__data/assets/image/0026/127925/Under_Investigation_by_LGA-fs8.png?v=0.11.0" class="mw-100" title="A heatmap of Queensland's under investigation COVID-19 cases by Local Government Area" />
+            <figcaption>Data as at 28/05/2020. Refer to <a href="#datacaveats">data caveats</a>.</figcaption>
         </figure>
     </div>
     <div class="col-12 col-sm-6 qh-map-right">
         <h3  id="casebylgaandsourcemap5">Interstate acquired</h3>
         <figure class="qg-nofig qh-map">
             <img src="https://www.qld.gov.au/__data/assets/image/0029/127919/Interstate_Acquired_by_LGA-fs8.png?v=0.4.0" class="mw-100" title="A heatmap of Queensland's interstate acquired COVID-19 cases by Local Government Area" />
-            <figcaption>Data as at 26/05/2020. Refer to <a href="#datacaveats">data caveats</a>.</figcaption>
+            <figcaption>Data as at 28/05/2020. Refer to <a href="#datacaveats">data caveats</a>.</figcaption>
         </figure>
     </div>
 </div>
@@ -1025,10 +1020,7 @@ $('#LGA tr td:first-child').each(function(i,e) {
     }
 }
 </style>
---><h3 id="casebyagegender">Age and gender of confirmed cases&mdash;table</h3>
-
-
-<table xmlns:qh="https://www.health.qld.gov.au/schema/QLD_CasesByAgeAndGender" id="QLD_CasesByAgeAndGender" class="table table-bordered">
+--><h3 id="casebyagegender">Age and gender of confirmed cases - table</h3><table id="QLD_CasesByAgeAndGender" class="table table-bordered">
 <thead>
 <tr>
 <th rowspan="2">Age group</th>
@@ -1097,7 +1089,8 @@ $('#LGA tr td:first-child').each(function(i,e) {
 </tr>
 </tbody>
 <caption>Data as at 28/05/2020. Refer to <a href="#datacaveats">data caveats</a>.</caption>
-</table><h3 id="agegendergraph">
+</table>
+<h3 id="agegendergraph">
   Age and gender of confirmed cases&mdash;graph
 </h3>
 <p class="text-center">
@@ -1105,9 +1098,7 @@ $('#LGA tr td:first-child').each(function(i,e) {
         <img src="https://www.qld.gov.au/__data/assets/image/0013/125500/QLD_CasesByAgeAndGender_Chart.png?v=0.37.0" title="A graph depicting the number of COVID-19 cases in Queensland by age and gender. This is the same data as in the previous table." class="mw-100">
         <figcaption>Refer to <a href="#datacaveats">data caveats</a>.</figcaption>
     </figure>
-</p><h3 id="testbyhhs">Testing</h3>
-
-<table xmlns:qh="https://www.health.qld.gov.au/schema/QLD_COVIDTesting" id="QLD_COVIDTesting" class="table table-bordered">
+</p><h3 id="testbyhhs">Testing</h3><table id="QLD_COVIDTesting" class="table table-bordered">
 <thead>
 <tr>
 <th rowspan="2">Region</th>
@@ -1131,11 +1122,10 @@ $('#LGA tr td:first-child').each(function(i,e) {
 <td>3,618</td>
 <td>3,414</td>
 </tr>
-</tbody><caption>Data as at 28/05/2020. Refer to <a href="#datacaveats">data caveats</a>.</caption>
-
-</table><h3 id="quarantine">Self-quarantine notices&mdash;Queensland</h3>
-
-<table class="table table-bordered">
+<caption>Data as at 28/05/2020. Refer to <a href="#datacaveats">data caveats</a>.</caption>
+</tbody>
+</table>
+<h3 id="quarantine">Self-quarantine notices - Queensland</h3><table class="table table-bordered">
 <thead><tr>
 <th></th>
 <th>Total<br><span><small>No. of persons subject to notice</small></span>
@@ -1156,9 +1146,7 @@ $('#LGA tr td:first-child').each(function(i,e) {
 </tr>
 </tbody>
 <caption>Data as at 27/05/2020. Refer to <a href="#datacaveats">data caveats</a>.</caption>
-</table><h3 id="quarantinebyhhs">Self-quarantine notices</h3>
-
-<table xmlns:qh="https://www.health.qld.gov.au/schema/QLD_Self_Quarantine_By_PHU" class="table table-bordered">
+</table><h3 id="quarantinebyhhs">Self-quarantine notices</h3><table class="table table-bordered">
 <thead><tr>
 <th>Region</th>
 <th>Total self-quarantine notices<br><span><small>No. of persons subject to notice</small></span>
@@ -1239,7 +1227,8 @@ $('#LGA tr td:first-child').each(function(i,e) {
 </tr>
 </tbody>
 <caption>Data as at 27/05/2020. Refer to <a href="#datacaveats">data caveats</a>.</caption>
-</table><h3 id="datacaveats">Data caveats</h3><p>Every effort is made to ensure the data is accurate at time of publication. It is point-in-time data. Data is subject to change as additional information is obtained.</p><p>There may be a lag in public reporting of particular data due to data quality assurance activities, ongoing maintenance and updating of notification details.</p><h4>Daily case data:</h4><p>Data presented in this report are updated daily where possible but should be considered with caution because they may change.</p><p>Daily case counts may vary over time due to ongoing investigations and case review.</p><p>Not all cases or active cases have required hospitalisation. To ensure privacy and confidentiality is maintained, hospitalisation data has been reported at a state level only.</p><p>Where the case normally resides in another State/Territory in Australia but is quarantined in Queensland at the time of notification, the <u>case is not</u> included in Queensland&rsquo;s case numbers.</p><p>Where the case normally resides overseas but is quarantined in Queensland at the time of notification, the <u>case is </u>included in Queensland&rsquo;s case numbers.</p><h4>Active cases:</h4><p>For the purposes of public reporting, the number of active cases is defined as: total cases less recovered and deceased cases.</p><h4>Deaths:</h4><p>Information about the death of a case with COVID-19 is made available by a clinician when a death certificate is completed. There may be a delay in obtaining and reporting this information. Therefore, the completeness, or any other attributes of COVID-related death data, should be interpreted with caution.</p><h4>Recovered cases:</h4><p>Recovered cases are cases reported as recovered by the responsible Public Health Unit plus cases that have a notification date of 30 days or more.</p><h4 id="firstnationscaveat">Cases of First Nations people:</h4><p>Total number of confirmed cases who have identified as an Aboriginal or Torres Strait Islander person.</p><h4>Case data by Hospital and Health Service (HHS) and Local Government Area (LGA):</h4><p>Location data (by HHS or by LGA) should be interpreted with caution.</p><p>In most cases the HHSs and LGAs are derived using the residential address when that case was notified but may alternatively have been derived from the location of the Public Health Unit managing the case, or the location where the test was ordered.</p><p>It does not necessarily reflect the current location of a case or where the infection was acquired.</p><p>To ensure privacy and confidentiality is maintained, data has been reported at an HHS level and at an LGA level and not at lower levels of geography.</p><p>These data may also include temporary residential addresses for overseas visitors quarantined in Queensland at the time of notification but do not include cases who normally reside in other States/Territories in Australia.</p><p>The HHS data do not reflect hospital admissions in each HHS. Not all cases with COVID-19 have required hospitalisation.</p><p>The LGA data are cumulative (total) notified case numbers.</p><h4>Maps:</h4><p>Data represented in the maps above are cumulative (total) notified case numbers. The maps should not be interpreted to reflect only current, notified active cases.</p><h4>Likely source of infection:</h4><p>Likely source of infection data are subject to change as public health investigations and case interviews are ongoing.</p><h4>Testing:</h4><p>Individuals may have multiple tests performed over time, by different laboratory service providers in public and private settings. The number of tests performed should therefore be interpreted with caution.</p><style>
+</table>
+<h3 id="datacaveats">Data caveats</h3><p>Every effort is made to ensure the data is accurate at time of publication. It is point-in-time data. Data is subject to change as additional information is obtained.</p><p>There may be a lag in public reporting of particular data due to data quality assurance activities, ongoing maintenance and updating of notification details.</p><h4>Daily case data:</h4><p>Data presented in this report are updated daily where possible but should be considered with caution because they may change.</p><p>Daily case counts may vary over time due to ongoing investigations and case review.</p><p>Not all cases or active cases have required hospitalisation. To ensure privacy and confidentiality is maintained, hospitalisation data has been reported at a state level only.</p><p>Where the case normally resides in another State/Territory in Australia but is quarantined in Queensland at the time of notification, the <u>case is not</u> included in Queensland&rsquo;s case numbers.</p><p>Where the case normally resides overseas but is quarantined in Queensland at the time of notification, the <u>case is </u>included in Queensland&rsquo;s case numbers.</p><h4>Active cases:</h4><p>For the purposes of public reporting, the number of active cases is defined as: total cases less recovered and deceased cases.</p><h4>Deaths:</h4><p>Information about the death of a case with COVID-19 is made available by a clinician when a death certificate is completed. There may be a delay in obtaining and reporting this information. Therefore, the completeness, or any other attributes of COVID-related death data, should be interpreted with caution.</p><h4>Recovered cases:</h4><p>Recovered cases are cases reported as recovered by the responsible Public Health Unit plus cases that have a notification date of 30 days or more.</p><h4 id="firstnationscaveat">Cases of First Nations people:</h4><p>Total number of confirmed cases who have identified as an Aboriginal or Torres Strait Islander person.</p><h4>Case data by Hospital and Health Service (HHS) and Local Government Area (LGA):</h4><p>Location data (by HHS or by LGA) should be interpreted with caution.</p><p>In most cases the HHSs and LGAs are derived using the residential address when that case was notified but may alternatively have been derived from the location of the Public Health Unit managing the case, or the location where the test was ordered.</p><p>It does not necessarily reflect the current location of a case or where the infection was acquired.</p><p>To ensure privacy and confidentiality is maintained, data has been reported at an HHS level and at an LGA level and not at lower levels of geography.</p><p>These data may also include temporary residential addresses for overseas visitors quarantined in Queensland at the time of notification but do not include cases who normally reside in other States/Territories in Australia.</p><p>The HHS data do not reflect hospital admissions in each HHS. Not all cases with COVID-19 have required hospitalisation.</p><p>The LGA data are cumulative (total) notified case numbers.</p><h4>Maps:</h4><p>Data represented in the maps above are cumulative (total) notified case numbers. The maps should not be interpreted to reflect only current, notified active cases.</p><h4>Likely source of infection:</h4><p>Likely source of infection data are subject to change as public health investigations and case interviews are ongoing.</p><h4>Testing:</h4><p>Individuals may have multiple tests performed over time, by different laboratory service providers in public and private settings. The number of tests performed should therefore be interpreted with caution.</p><style>
 #qg-primary-content table caption, #qg-primary-content figure.qh-map figcaption {
     caption-side: bottom;
     text-align:left;
@@ -1287,7 +1276,7 @@ if (viewport) viewport.setAttribute('content',"width=device-width, initial-scale
                         
                                                                                 <dl>
                                 <dt>Last updated:</dt>
-                                <dd>28 May 2020</dd>
+                                <dd>29 May 2020</dd>
                                                             </dl>
                                                                             
                         
@@ -1699,6 +1688,6 @@ if (viewport) viewport.setAttribute('content',"width=device-width, initial-scale
     
 
 
-<script async type="text/javascript" src="/_Incapsula_Resource?SWJIYLWA=719d34d31c8e3a6e6fffd425f7e032f3&ns=1&cb=1445231331"></script>
+<script async type="text/javascript" src="/_Incapsula_Resource?SWJIYLWA=719d34d31c8e3a6e6fffd425f7e032f3&ns=1&cb=132913962"></script>
 </body>
 </html>
