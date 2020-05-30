@@ -145,6 +145,11 @@ def uncompress_powerbi_response(data):
 
   results = []
   for case in data['results'][0]['result']['data']['dsr']['DS'][0]['PH'][0]['DM0']:
+    # not sure what this flags, but it indicates something we don't currently handle so skip it.
+    if u'\xd8' in case:
+      print('FIXME: Skipping over field with special key we don\'t understand')
+      continue
+
     case_num = None
     event_date = None
 
