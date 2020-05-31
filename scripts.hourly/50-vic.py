@@ -291,7 +291,7 @@ def add_dhhs_release(timeseries_data, uri):
 
 def add_historical_data(timeseries_data):
   historical_releases = bs4.BeautifulSoup(
-    requests.get('https://www2.health.vic.gov.au/about/media-centre/mediareleases/?ps=10000&s=relevance&pn=1').text,
+    requests.get('https://www2.health.vic.gov.au/about/media-centre/mediareleases/?q=&ps=100&pn=1&s=relevance&i=&f=&n=&e=&a=&ac=&df=&dt=&l=&lq=').text,
     'html.parser'
   )
 
@@ -309,8 +309,15 @@ def add_historical_data(timeseries_data):
 
     uri = '_' + '_'.join(href.split('/')[3:])
     response_body = cache_request(
-      'data_cache/vic/' + uri.replace('/', '_') + '.html',
+      'data_cache/vic/historical/' + uri.replace('/', '_') + '.html',
       lambda: requests.get(href).text,
+    )
+
+  for basename in os.listdir('data_cache/vic/historical'):
+    response_body = cache_request(
+      'data_cache/vic/historical/' + basename,
+      lambda: False,
+      force_cache=True,
     )
 
     release = bs4.BeautifulSoup(response_body, 'html.parser')
