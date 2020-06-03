@@ -125,7 +125,7 @@ def get_timeseries_data(url):
         if len(tds) == 0 or len(tds) == 1:
           continue
 
-        lga_name = clean_whitespace(tds[0].text.strip())
+        lga_name = clean_whitespace(tds[0].text.strip()).replace('*', '')
         lga_count = parse_num(tds[-1].text.strip())
 
         if lga_name == 'Total':
