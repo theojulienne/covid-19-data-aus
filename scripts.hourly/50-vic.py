@@ -270,7 +270,7 @@ def add_dhhs_release(timeseries_data, uri):
 
   for date_key in date_keys:
     # We should always be able to get the number of people confirmed and tested
-    if tested is not None and confirmed is not None:
+    if (tested is not None or date_key in ['2020-06-06', '2020-06-07']) and confirmed is not None:
       timeseries_data[date_key]['tested'] = tested
       # We overwrite the summed individual cases here, if we have an official
       # media release
