@@ -72,8 +72,11 @@ def get_timeseries_data(url):
     soup = bs4.BeautifulSoup(body, 'html.parser')
     content = soup.select_one('div#content')
 
-    if 'Safeguards in place to minimise Cairns COVID-19 risk' in soup.select_one('title').text:
-      continue
+    should_exclude = False
+    for excl in ['Safeguards in place to minimise Cairns COVID-19 risk', 'Tests negative following Bundaberg', 'New COVID-19 case prompts reminder for vigilance']:
+      if excl in soup.select_one('title').text:
+        should_exclude = True
+    if should_exclude: continue
 
     date_space = content.select_one('h2,h4')
     if not date_space:
