@@ -235,6 +235,8 @@ def add_dhhs_release(timeseries_data, uri):
     lambda: requests.get(href).text
   )
 
+  print('Processing: {}'.format(uri))
+
   release = bs4.BeautifulSoup(response_body, 'html.parser')
   layout_region = release.select_one('div.layout__region')
 
@@ -247,13 +249,13 @@ def add_dhhs_release(timeseries_data, uri):
   except IndexError:
     pass # this is fine, we just try again with the h1
   if date_text is None:
-    date_text = release.select_one('h1').text.strip().split(' - ')[1]
+    date_text = release.select_one('h1').text.strip().split(' - ')[-1]
   if date_text is None:
     print('WARNING: {} was not parseable, please check if it is intended to be a parseable release'.format(href))
     return timeseries_data
   # And sometimes it has the day first, sometimes not
   date_text = date_text.split(',')[-1].strip()
-  if date_text.count(' ') < 2:
+  if date_text.count(' ') < 2 or ' 202' not in date_text:
     date_text = date_text + ' 2020'
   try:
     date = datetime.datetime.strptime(date_text, '%d %B %Y')
