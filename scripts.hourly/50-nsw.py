@@ -95,7 +95,7 @@ def get_timeseries_data(url):
           parsed_table['headers'] = ['Cases', 'Count']
 
         if parsed_table['headers'][0] in 'Cases':
-          confirmed, tested, deaths = process_overall_table(parsed_table)
+          confirmed, tested, deaths, recovered = process_overall_table(parsed_table)
 
         elif parsed_table['headers'][0].lower() == 'age group':
           age_groups = process_age_table(parsed_table)
@@ -104,9 +104,11 @@ def get_timeseries_data(url):
           sources = process_source_table(parsed_table)
 
         elif parsed_table['headers'][0] == 'Outcome':
-          maybe_confirmed, recovered = process_outcome_table(parsed_table)
+          maybe_confirmed, maybe_recovered = process_outcome_table(parsed_table)
           if maybe_confirmed and not confirmed:
             confirmed = maybe_confirmed
+          if maybe_recovered and not recovered:
+            recovered = maybe_recovered
 
         else:
           raise Exception('Unknown table in %s! %s' % (cache_filename, repr(parsed_table['headers'])))
@@ -146,7 +148,7 @@ def process_outcome_table(table):
   confirmed_row = [r[1] for r in table['data'] if clean_whitespace(r[0]).lower() == 'total']
   if len(confirmed_row) > 0:
     confirmed = confirmed_row[0]
-  
+
   recovered = [r[1] for r in table['data'] if clean_whitespace(r[0]).lower() == 'recovered'][0]
   not_recovered = [r[1] for r in table['data'] if clean_whitespace(r[0]).lower() in ['not recovered', 'not yet recovered']][0]
   too_soon = [r[1] for r in table['data'] if 'data not available' in clean_whitespace(r[0]).lower()][0]
@@ -157,6 +159,7 @@ def process_outcome_table(table):
 def process_overall_table(table):
   confirmed = [r[1] for r in table['data'] if 'confirmed' in clean_whitespace(r[0]).lower()][0]
   deaths = ([r[1] for r in table['data'] if 'deaths' in r[0].lower() or 'died' in r[0].lower()] + [None])[0] # only available in new pages
+  recovered = ([r[1] for r in table['data'] if 'recovered' in r[0].lower()] + [None])[0] # only available in even newer pages
 
   potential_in_progress = [r[1] for r in table['data'] if 'investigation' in clean_whitespace(r[0])]
   if len(potential_in_progress) > 0:
@@ -170,7 +173,7 @@ def process_overall_table(table):
   else:
     total = sum([r[1] for r in table['data']])
 
-  return [confirmed, total - in_progress, deaths]
+  return [confirmed, total - in_progress, deaths, recovered]
 
 def clean_whitespace(txt):
   return re.sub(r'\s+', ' ', txt.replace('&nbsp;', ' '))
@@ -249,6 +252,9 @@ def clean_text(text):
   text = text.replace(u'\u200b', '')
   text = text.replace('(see', '')
   text = text.replace('below)', '')
+  # This is not traditionally how one uses an asterisk -_-
+  if text.startswith('*'):
+    text = text[1:]
   return text.split('*')[0].strip()
 
 def parse_datum(datum):
