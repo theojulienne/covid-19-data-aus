@@ -59,6 +59,7 @@ def main():
     json.dump(formatted_data, f, indent=2, sort_keys=True)
 
 def get_timeseries_data(url):
+  print('Debugging IP: {}'.format(requests.get('http://icanhazip.com/').text))
   post_list_soup = bs4.BeautifulSoup(requests.get(url).text, 'html.parser')
 
   timeseries_data = {}
