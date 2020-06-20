@@ -153,6 +153,18 @@ def parse_pdfs(path):
   return data
 
 def parse_pdf(filename):
+  file_date = datetime.datetime(2020, 4, 1)
+
+  if 'coronavirus-covid-19-at-a-glance' in filename:
+    if 'coronavirus-covid-19-at-a-glance-coronavirus-covid-19-at-a-glance-infographic' in filename:
+      pass
+    elif 'infographic' in filename:
+      file_date = datetime.datetime.strptime(filename.replace('_0', ''), 'data_cache/national/coronavirus-covid-19-at-a-glance-%d-%B-%Y-coronavirus-covid-19-at-a-glance-infographic.pdf')
+    else:
+      file_date = datetime.datetime.strptime(filename.replace('_0', ''), 'data_cache/national/coronavirus-covid-19-at-a-glance-%d-%B-%Y.pdf')
+
+  # print "File date", file_date
+
   print('Processing: {}'.format(filename))
   pdf_text_data = None
   with open(filename, 'rb') as f:
@@ -174,6 +186,15 @@ def parse_pdf(filename):
   for rel_left_coord, rel_bottom_coord, text in pdf_text_data:
     left_coord = rel_left_coord * OLD_WIDTH
     bottom_coord = rel_bottom_coord * OLD_HEIGHT
+
+    # If someone stuck a new line in and copied the value twice by accident,
+    # lets just pretend that didn't happen
+    if '\n' in text:
+      if len(set([t.strip() for t in text.split('\n')])) == 1:
+        text = t.split('\n')[0].strip()
+
+    # if file_date >= datetime.datetime(2020, 5, 26) and file_date <= datetime.datetime(2020, 6, 3):
+    #   print file_date.strftime('%Y-%m-%d'), left_coord, bottom_coord, text
 
     # If we're in the state map
     if left_coord > 600 and bottom_coord > 350:
@@ -251,7 +272,7 @@ def parse_pdf(filename):
         hospitalized_values.append((left_coord, parse_num(text)))
 
     # If this is the testing panel
-    elif bottom_coord > 25:
+    elif bottom_coord > 25 or (file_date >= datetime.datetime(2020, 5, 26) and bottom_coord > 12):
       # We don't care about the totals callouts
       if bottom_coord > 125:
         pass
@@ -259,13 +280,13 @@ def parse_pdf(filename):
       elif left_coord > 250:
         pass
       # Top row of test numbers
-      elif bottom_coord > 100:
+      elif bottom_coord > 100 or (file_date >= datetime.datetime(2020, 5, 26) and bottom_coord > 90):
         top_row_test_values.append((left_coord, parse_num(text)))
       # Top row of test percentages
-      elif bottom_coord > 75:
+      elif bottom_coord > 75 or (file_date >= datetime.datetime(2020, 5, 26) and bottom_coord > 67):
         top_row_test_percs.append((left_coord, parse_perc(text)))
       # Bottom row of test numbers
-      elif bottom_coord > 50:
+      elif bottom_coord > 50 or (file_date >= datetime.datetime(2020, 5, 26) and bottom_coord > 37):
         bottom_row_test_values.append((left_coord, parse_num(text)))
       # Bottom row of test percentages
       else:
@@ -296,7 +317,7 @@ def flatten_and_insert_state_data(data, values, value_key):
   states = ['ACT', 'NSW', 'NT', 'QLD', 'SA', 'TAS', 'VIC', 'WA']
 
   if len(states) != len(values):
-    print values
+    # print values
     raise Exception('Uh oh, missing / extra %s values!' % value_key)
 
   for state, (_, value) in zip(states, values):
