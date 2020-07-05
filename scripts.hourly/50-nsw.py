@@ -101,7 +101,7 @@ def get_timeseries_data(url):
         elif parsed_table['headers'][0].lower() == 'age group':
           age_groups = process_age_table(parsed_table)
 
-        elif parsed_table['headers'][0] == 'Source':
+        elif parsed_table['headers'][0] == 'Source' or parsed_table['headers'][0] == 'By likely source of infection':
           sources = process_source_table(parsed_table)
 
         elif parsed_table['headers'][0] == 'Outcome':
@@ -110,6 +110,9 @@ def get_timeseries_data(url):
             confirmed = maybe_confirmed
           if maybe_recovered and not recovered:
             recovered = maybe_recovered
+
+        elif parsed_table['headers'][0].startswith('Since'):
+          pass
 
         else:
           raise Exception('Unknown table in %s! %s' % (cache_filename, repr(parsed_table['headers'])))
