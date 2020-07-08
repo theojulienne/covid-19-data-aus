@@ -373,7 +373,7 @@ def parse_fulltext_post(body):
   body = body.replace(u'\xa0', ' ')
 
   confirmed = None
-  m = re.match(r'.*total number of (?:coronavirus \(COVID-19\) )?cases (in Victoria|increased) (is|to) (?P<confirmed>[\d,]+).*', body, re.MULTILINE | re.DOTALL)
+  m = re.match(r'.*total number of (?:coronavirus \(COVID-19\) )?cases (in Victoria|increased|now) (is|to|at) (?P<confirmed>[\d,]+).*', body, re.MULTILINE | re.DOTALL)
   if not m:
     m = re.match(r'.*Of the total (?P<confirmed>[\d,]+) cases.*', body, re.MULTILINE | re.DOTALL)
   if m:
