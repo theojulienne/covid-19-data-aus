@@ -271,6 +271,8 @@ def add_dhhs_release(timeseries_data, uri):
     date_keys.append('2020-04-16') # they missed this date, copy it.
 
   for date_key in date_keys:
+    print '{}: confirmed={}, tested={}, deaths={}, recovered={}, hospitalized={}, icu={}'.format(date_key, confirmed, tested, deaths, recovered, hospitalized, icu)
+    
     # We should always be able to get the number of people confirmed and tested
     if (tested is not None or date_key in ['2020-06-06', '2020-06-07']) and confirmed is not None:
       timeseries_data[date_key]['tested'] = tested
