@@ -73,7 +73,7 @@ def get_timeseries_data(url):
     content = soup.select_one('div#content')
 
     should_exclude = False
-    for excl in ['Safeguards in place to minimise Cairns COVID-19 risk', 'Tests negative following Bundaberg', 'New COVID-19 case prompts reminder for vigilance', 'Update on Queensland COVID-19 testing regime', 'list of', 'warning', 'additional']:
+    for excl in ['Safeguards in place to minimise Cairns COVID-19 risk', 'Tests negative following Bundaberg', 'New COVID-19 case prompts reminder for vigilance', 'Update on Queensland COVID-19 testing regime', 'list of', 'warning', 'additional', 'Alert']:
       if excl in soup.select_one('title').text:
         should_exclude = True
     if should_exclude: continue
@@ -97,6 +97,7 @@ def get_timeseries_data(url):
       r'.*There are (?P<confirmed>\d+) confirmed cases of novel coronavirus \(COVID-19\) in Queensland.*',
       r'.*A total of (?P<confirmed>[\w-]+) people in Queensland have been confirmed with COVID-19.*',
       r'.*There have now been (?P<confirmed>[\w-]+) people in Queensland(?: confirmed)? with COVID-19.*',
+      r'.*The Queensland Government has reported ([\d\w]+) new cases of COVID-19 in the past 24 hours - in addition to the ([\d\w]+) new cases announced yesterday - bringing the total case number to (?P<confirmed>[\d,]+).*',
     ]
     for r in confirmed_regexes:
       m = re.match(r, body, re.MULTILINE | re.DOTALL)
