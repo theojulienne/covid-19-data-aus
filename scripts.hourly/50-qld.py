@@ -90,6 +90,7 @@ def get_timeseries_data(url):
     # Confirmed count
     confirmed = None
     confirmed_regexes = [
+      r'.*Queensland Health has today announced ([\d\w]+) new COVID-19 cases, bringing total cases to (?P<confirmed>[\d,]+).*',
       r'.*Queensland has ([\d\w]+) new (overseas-acquired |confirmed )?cases? of novel coronavirus \(COVID-19\) to report today, bringing (the )?total cases to (?P<confirmed>[\d,]+).*',
       r'.*Queensland has ([\d\w]+) new confirmed cases of novel coronavirus \(COVID-19\) raising the state total to (?P<confirmed>[\d,]+)[\.,].*',
       r'.*Queensland has ([\d\w]+) new confirmed cases of coronavirus \(COVID-19\)(?:,[^,]+,)? raising the state total to (?P<confirmed>[\d,]+)[\.,].*',
