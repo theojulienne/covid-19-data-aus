@@ -38,6 +38,7 @@ jobs:
       run: ./scripts.hourly/50-${STATE_TO_RUN}.py
       env:
         STATE_TO_RUN: ${{ matrix.state }}
+        REQUESTS_CA_BUNDLE: /etc/ssl/certs/ca-certificates.crt
 
     - name: Commit files
       run: |
