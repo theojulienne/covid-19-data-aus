@@ -225,19 +225,20 @@ def parse_pdf(filename):
       else:
         state = 'TAS'
 
-      # There really shouldn't be a newline here! But if there is, because
-      # Reasons....
-      valid_value_found = False
-      for line in text.split('\n'):
-        m = re.match(r'^(?P<total>[\d,]+)(?: \((?P<deaths>\d+)\))?$', line)
-
-        if m:
-          parsed = m.groupdict()
-          valid_value_found = True
-          data[state]['total'] = parse_num(parsed['total'])
-          data[state]['deaths'] = parse_num(parsed['deaths'] or '0')
-
-      if not valid_value_found:
+      SUMMARY_REGEX = r'^(?P<total>[\d,]+)(?: \n?\((?P<deaths>\d+)\))?$'
+      match = re.match(SUMMARY_REGEX, text)
+      if not match:
+        # There really shouldn't be a newline here! But if there is, because
+        # Reasons....
+        for line in text.split('\n'):
+          m = re.match(SUMMARY_REGEX, line)
+          if m:
+            match = m
+      if match:
+        parsed = match.groupdict()
+        data[state]['total'] = parse_num(parsed['total'])
+        data[state]['deaths'] = parse_num(parsed['deaths'] or '0')
+      else:
         raise Exception('Uh oh! Couldn\'t parse %s' % repr(text))
 
     # If this is the national totals panel, skip! We get this same information
