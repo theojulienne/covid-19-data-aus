@@ -12,7 +12,7 @@ import requests
 
 def main():
   # The NSW Health RSS feed only goes back a few weeks, so we have to scrape this page instead :(
-  timeseries_data = get_timeseries_data('https://health.nsw.gov.au/news/Pages/2020-nsw-health.aspx')
+  timeseries_data = get_timeseries_data('https://www.health.nsw.gov.au/news/Pages/2020-nsw-health.aspx')
   timeseries_data = add_manual_data(timeseries_data)
 
   # Muck with the data to get it into the format that's expected
