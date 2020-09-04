@@ -9,6 +9,9 @@ import os
 
 import bs4
 import requests
+import certifi
+
+SSL_CERT_PATH=os.getcwd() + '/ssl/digicert-nswhealth-chain.pem'
 
 def main():
   # The NSW Health RSS feed only goes back a few weeks, so we have to scrape this page instead :(
@@ -60,7 +63,7 @@ def main():
 
 def get_timeseries_data(url):
   print('Debugging IP: {}'.format(requests.get('http://icanhazip.com/').text))
-  post_list_soup = bs4.BeautifulSoup(requests.get(url).text, 'html.parser')
+  post_list_soup = bs4.BeautifulSoup(requests.get(url, verify=SSL_CERT_PATH).text, 'html.parser')
 
   timeseries_data = {}
   for li in post_list_soup.select('div#ContentHtml1Zone2 li li'):
@@ -74,7 +77,7 @@ def get_timeseries_data(url):
         with open(cache_filename, 'rb') as f:
           response_body = f.read()
       else:
-        response_body = requests.get(href).text
+        response_body = requests.get(href, verify=SSL_CERT_PATH).text
         with open(cache_filename, 'wb') as f:
           f.write(response_body.encode('utf-8'))
       soup = bs4.BeautifulSoup(response_body, 'html.parser')
