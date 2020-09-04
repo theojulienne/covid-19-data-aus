@@ -265,7 +265,7 @@ def parse_pdf(filename):
       if bottom_coord > 250:
         pass
       # end of the table, after this is the age care table
-      elif left_coord > 250:
+      elif left_coord > 240:
         pass
       # Otherwise, append all hospitalized values to a list - we'll order these
       # by their left coordinates, and use this to determine the state
@@ -319,7 +319,7 @@ def flatten_and_insert_state_data(data, values, value_key):
 
   if len(states) != len(values):
     # print values
-    raise Exception('Uh oh, missing / extra %s values!' % value_key)
+    raise Exception('Uh oh, missing / extra %s values! %s' % (value_key, values))
 
   for state, (_, value) in zip(states, values):
     data[state][value_key] = value
