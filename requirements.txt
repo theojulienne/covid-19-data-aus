@@ -2,4 +2,5 @@ beautifulsoup4
 pdfminer==20140328
 requests
 word2number==0.1
-certifi==2020.6.20
+certifi
+requests[security]
