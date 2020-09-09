@@ -283,7 +283,8 @@ def add_dhhs_release(timeseries_data, uri):
       # media release
       timeseries_data[date_key]['confirmed'] = confirmed
     else:
-      raise Exception('Trouble parsing! {} (confirmed={}, tested={}, deaths={}, recovered={}, hospitalized={}, icu={})'.format(uri, confirmed, tested, deaths, recovered, hospitalized, icu))
+      print('WARNING: Trouble parsing! {} (confirmed={}, tested={}, deaths={}, recovered={}, hospitalized={}, icu={})'.format(uri, confirmed, tested, deaths, recovered, hospitalized, icu))
+      return timeseries_data
 
     if deaths is not None:
       timeseries_data[date_key]['deaths'] = deaths
