@@ -104,7 +104,7 @@ def get_timeseries_data(url):
         elif parsed_table['headers'][0].lower() == 'age group':
           age_groups = process_age_table(parsed_table)
 
-        elif parsed_table['headers'][0] == 'Source' or parsed_table['headers'][0] == 'By likely source of infection':
+        elif re.sub(r'\s+', ' ', parsed_table['headers'][0]) in ('By likely source of infection', 'Source', 'Likely source of infection'):
           sources = process_source_table(parsed_table)
 
         elif parsed_table['headers'][0] == 'Outcome':
