@@ -214,7 +214,7 @@ def process_source_table(table):
     cleaned_r0 = re.sub('\s+', ' ', cleaned_r0)
     if 'Overseas' in cleaned_r0:
       overseas = r[-1]
-    elif 'contact of a confirmed case' in cleaned_r0 or 'Epi link' in cleaned_r0:
+    elif 'contact of a confirmed case' in cleaned_r0 or 'contact of aconfirmed case' in cleaned_r0 or 'Epi link' in cleaned_r0:
       contact = r[-1]
     elif 'not identified' in cleaned_r0 or 'Unknown' in cleaned_r0:
       community = r[-1]
