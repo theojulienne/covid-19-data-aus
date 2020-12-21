@@ -79,6 +79,7 @@ def get_timeseries_data(url):
     if should_exclude: continue
 
     date_space = content.select_one('h2,h4')
+    if date_space and 'Statement from' in date_space.text: continue
     if not date_space:
       date_space = content.select_one('#last-updated')
     date_text = date_space.text.strip()
