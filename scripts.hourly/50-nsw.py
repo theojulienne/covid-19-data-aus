@@ -15,7 +15,10 @@ SSL_CERT_PATH=os.getcwd() + '/ssl/digicert-nswhealth-chain.pem'
 
 def main():
   # The NSW Health RSS feed only goes back a few weeks, so we have to scrape this page instead :(
-  timeseries_data = get_timeseries_data('https://www.health.nsw.gov.au/news/Pages/2020-nsw-health.aspx')
+  timeseries_data = get_timeseries_data([
+    'https://www.health.nsw.gov.au/news/Pages/2020-nsw-health.aspx',
+    'https://www.health.nsw.gov.au/news/Pages/2021-nsw-health.aspx'
+  ])
   timeseries_data = add_manual_data(timeseries_data)
 
   # Muck with the data to get it into the format that's expected
@@ -61,92 +64,95 @@ def main():
   with open('by_state_partial/nsw.json', 'w') as f:
     json.dump(formatted_data, f, indent=2, sort_keys=True)
 
-def get_timeseries_data(url):
+def get_timeseries_data(urls):
   print('Debugging IP: {}'.format(requests.get('http://icanhazip.com/').text))
-  post_list_soup = bs4.BeautifulSoup(requests.get(url, verify=SSL_CERT_PATH).text, 'html.parser')
-
   timeseries_data = {}
-  for li in post_list_soup.select('div#ContentHtml1Zone2 li li'):
-    # There are other media releases in the list - we only care about those that
-    # talk about COVID-19/coronavirus statistics
-    if ('COVID-19' in li.text or 'coronavirus' in li.text) and 'stat' in li.text:
-      href = li.select_one('a').attrs['href']
-      uri = href.replace('https://www.health.nsw.gov.au/', '')
-      cache_filename = 'data_cache/nsw/'+uri.replace('/', '_')+'.html'
-      if os.path.exists(cache_filename):
-        with open(cache_filename, 'rb') as f:
-          response_body = f.read()
-      else:
-        response_body = requests.get(href, verify=SSL_CERT_PATH).text
-        with open(cache_filename, 'wb') as f:
-          f.write(response_body.encode('utf-8'))
-      soup = bs4.BeautifulSoup(response_body, 'html.parser')
+  for url in urls:
+    post_list_soup = bs4.BeautifulSoup(requests.get(url, verify=SSL_CERT_PATH).text, 'html.parser')
 
-      date = datetime.datetime.strptime(soup.select_one('div.newsdate').text.strip(), '%d %B %Y')
-      tables = soup.select('table.moh-rteTable-6')
-
-      age_groups = None
-      sources = None
-
-      confirmed = tested = deaths = recovered = None
-      print("Processing: {}".format(cache_filename))
-      for t in tables:
-        parsed_table = parse_table(t)
-
-        if 'Confirmed cases' in parsed_table['headers'][0]:
-          parsed_table['data'] = [parsed_table['headers']] + parsed_table['data']
-          parsed_table['data'][0][-1] = parse_datum(clean_text(parsed_table['data'][0][-1]))
-          parsed_table['headers'] = ['Cases', 'Count']
-
-        if parsed_table['headers'][0] in 'Cases':
-          confirmed, tested, deaths, recovered = process_overall_table(parsed_table)
-
-        elif parsed_table['headers'][0].lower() == 'age group':
-          age_groups = process_age_table(parsed_table)
-
-        elif re.sub(r'\s+', ' ', parsed_table['headers'][0]) in ('By likely source of infection', 'Source', 'Likely source of infection'):
-          sources = process_source_table(parsed_table)
-
-        elif parsed_table['headers'][0] == 'Outcome':
-          maybe_confirmed, maybe_recovered = process_outcome_table(parsed_table)
-          if maybe_confirmed and not confirmed:
-            confirmed = maybe_confirmed
-          if maybe_recovered and not recovered:
-            recovered = maybe_recovered
-
-        elif parsed_table['headers'][0].startswith('Since') or parsed_table['headers'][0].startswith('Asymptomatic'):
-          pass
-
+    for li in post_list_soup.select('div#ContentHtml1Zone2 li li'):
+      # There are other media releases in the list - we only care about those that
+      # talk about COVID-19/coronavirus statistics
+      if ('COVID-19' in li.text or 'coronavirus' in li.text) and 'stat' in li.text:
+        href = li.select_one('a').attrs['href']
+        if not href.startswith('https://') and not href.startswith('/'):
+          href = 'https://www.health.nsw.gov.au/news/Pages/' + href
+        uri = href.replace('https://www.health.nsw.gov.au/', '')
+        cache_filename = 'data_cache/nsw/'+uri.replace('/', '_')+'.html'
+        if os.path.exists(cache_filename):
+          with open(cache_filename, 'rb') as f:
+            response_body = f.read()
         else:
-          raise Exception('Unknown table in %s! %s' % (cache_filename, repr(parsed_table['headers'])))
+          response_body = requests.get(href, verify=SSL_CERT_PATH).text
+          with open(cache_filename, 'wb') as f:
+            f.write(response_body.encode('utf-8'))
+        soup = bs4.BeautifulSoup(response_body, 'html.parser')
 
-      body = soup.select_one('div.maincontent').text
-      hospitalized, icu, ventilators = parse_full_body(body)
+        date = datetime.datetime.strptime(soup.select_one('div.newsdate').text.strip(), '%d %B %Y')
+        tables = soup.select('table.moh-rteTable-6')
 
-      date_data = {
-        'confirmed': confirmed,
-        # Exclude in progress tests from the total tested, since we want
-        # this to indicate completed tests
-        'tested': tested,
-        'deaths': deaths,
-        'recovered': recovered,
-        'hospitalized': hospitalized,
-        'icu': icu,
-        'ventilators': ventilators,
-      }
+        age_groups = None
+        sources = None
 
-      if age_groups is not None:
-        date_data['age_groups'] = age_groups
+        confirmed = tested = deaths = recovered = None
+        print("Processing: {}".format(cache_filename))
+        for t in tables:
+          parsed_table = parse_table(t)
 
-      if sources is not None:
-        date_data['sources'] = sources
+          if 'Confirmed cases' in parsed_table['headers'][0]:
+            parsed_table['data'] = [parsed_table['headers']] + parsed_table['data']
+            parsed_table['data'][0][-1] = parse_datum(clean_text(parsed_table['data'][0][-1]))
+            parsed_table['headers'] = ['Cases', 'Count']
 
-      date_key = date.strftime('%Y-%m-%d')
+          if parsed_table['headers'][0] in 'Cases':
+            confirmed, tested, deaths, recovered = process_overall_table(parsed_table)
 
-      # If there's more than one update for a day, only use the first (most
-      # recent) one
-      if date_key not in timeseries_data:
-        timeseries_data[date_key] = date_data
+          elif parsed_table['headers'][0].lower() == 'age group':
+            age_groups = process_age_table(parsed_table)
+
+          elif re.sub(r'\s+', ' ', parsed_table['headers'][0]) in ('By likely source of infection', 'Source', 'Likely source of infection'):
+            sources = process_source_table(parsed_table)
+
+          elif parsed_table['headers'][0] == 'Outcome':
+            maybe_confirmed, maybe_recovered = process_outcome_table(parsed_table)
+            if maybe_confirmed and not confirmed:
+              confirmed = maybe_confirmed
+            if maybe_recovered and not recovered:
+              recovered = maybe_recovered
+
+          elif parsed_table['headers'][0].startswith('Since') or parsed_table['headers'][0].startswith('Asymptomatic'):
+            pass
+
+          else:
+            raise Exception('Unknown table in %s! %s' % (cache_filename, repr(parsed_table['headers'])))
+
+        body = soup.select_one('div.maincontent').text
+        hospitalized, icu, ventilators = parse_full_body(body)
+
+        date_data = {
+          'confirmed': confirmed,
+          # Exclude in progress tests from the total tested, since we want
+          # this to indicate completed tests
+          'tested': tested,
+          'deaths': deaths,
+          'recovered': recovered,
+          'hospitalized': hospitalized,
+          'icu': icu,
+          'ventilators': ventilators,
+        }
+
+        if age_groups is not None:
+          date_data['age_groups'] = age_groups
+
+        if sources is not None:
+          date_data['sources'] = sources
+
+        date_key = date.strftime('%Y-%m-%d')
+
+        # If there's more than one update for a day, only use the first (most
+        # recent) one
+        if date_key not in timeseries_data:
+          timeseries_data[date_key] = date_data
 
   return timeseries_data
 
