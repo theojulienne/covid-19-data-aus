@@ -73,7 +73,7 @@ def get_timeseries_data(url):
     content = soup.select_one('div#content')
 
     should_exclude = False
-    for excl in ['Safeguards in place to minimise Cairns COVID-19 risk', 'Tests negative following Bundaberg', 'New COVID-19 case prompts reminder for vigilance', 'Update on Queensland COVID-19 testing regime', 'list of', 'warning', 'additional', 'Alert', 'Ipswich']:
+    for excl in ['Safeguards in place to minimise Cairns COVID-19 risk', 'Tests negative following Bundaberg', 'New COVID-19 case prompts reminder for vigilance', 'Update on Queensland COVID-19 testing regime', 'list of', 'warning', 'additional', 'Alert', 'Ipswich', 'strain']:
       if excl in soup.select_one('title').text:
         should_exclude = True
     if should_exclude: continue
