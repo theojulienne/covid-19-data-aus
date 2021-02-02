@@ -85,7 +85,11 @@ def get_timeseries_data(url):
     date_text = date_space.text.strip()
     if date_text.startswith('Last updated: '):
       date_text = date_text[14:]
-    date = datetime.datetime.strptime(date_text, '%d %B %Y')
+    try:
+      date = datetime.datetime.strptime(date_text, '%d %B %Y')
+    except ValueError:
+      print("Invalid date '{}', skipping".format(date_text))
+      continue
     body = re.sub(r'[^\x00-\x7F]+', ' ', content.text)
 
     # Confirmed count
