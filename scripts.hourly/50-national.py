@@ -158,10 +158,11 @@ def parse_pdf(filename):
   if 'coronavirus-covid-19-at-a-glance' in filename:
     if 'coronavirus-covid-19-at-a-glance-coronavirus-covid-19-at-a-glance-infographic' in filename:
       pass
-    elif 'infographic' in filename:
-      file_date = datetime.datetime.strptime(filename.replace('_0', ''), 'data_cache/national/coronavirus-covid-19-at-a-glance-%d-%B-%Y-coronavirus-covid-19-at-a-glance-infographic.pdf')
+    elif '-coronavirus-covid-19' in filename:
+      prefix, _ = filename.split('-coronavirus-covid-19', 1)
+      file_date = datetime.datetime.strptime(prefix.replace('_0', '').replace('_1', ''), 'data_cache/national/coronavirus-covid-19-at-a-glance-%d-%B-%Y')
     else:
-      file_date = datetime.datetime.strptime(filename.replace('_0', ''), 'data_cache/national/coronavirus-covid-19-at-a-glance-%d-%B-%Y.pdf')
+      file_date = datetime.datetime.strptime(filename.replace('_0', '').replace('_1', ''), 'data_cache/national/coronavirus-covid-19-at-a-glance-%d-%B-%Y.pdf')
 
   # print "File date", file_date
 

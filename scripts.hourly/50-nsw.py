@@ -120,7 +120,7 @@ def get_timeseries_data(urls):
             if maybe_recovered and not recovered:
               recovered = maybe_recovered
 
-          elif parsed_table['headers'][0].startswith('Since') or parsed_table['headers'][0].startswith('Asymptomatic') or parsed_table['headers'][0].startswith('From '):
+          elif parsed_table['headers'][0].startswith('Since') or parsed_table['headers'][0].startswith('Asymptomatic') or parsed_table['headers'][0].startswith('From ') or parsed_table['headers'][0].startswith('Location') or parsed_table['headers'][0].startswith('Suburb') or parsed_table['headers'][0].startswith('Route'):
             pass
 
           else:

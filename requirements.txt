@@ -1,5 +1,5 @@
 beautifulsoup4
-pdfminer==20140328
+pdfminer==20191125
 requests
 word2number==0.1
 certifi

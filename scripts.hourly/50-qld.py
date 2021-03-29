@@ -73,7 +73,7 @@ def get_timeseries_data(url):
     content = soup.select_one('div#content')
 
     should_exclude = False
-    for excl in ['Safeguards in place to minimise Cairns COVID-19 risk', 'Tests negative following Bundaberg', 'New COVID-19 case prompts reminder for vigilance', 'Update on Queensland COVID-19 testing regime', 'list of', 'warning', 'additional', 'Alert', 'Ipswich', 'strain']:
+    for excl in ['Safeguards in place to minimise Cairns COVID-19 risk', 'Tests negative following Bundaberg', 'New COVID-19 case prompts reminder for vigilance', 'Update on Queensland COVID-19 testing regime', 'list of', 'warning', 'additional', 'Alert', 'Ipswich', 'strain', 'identified']:
       if excl in soup.select_one('title').text:
         should_exclude = True
     if should_exclude: continue
@@ -175,6 +175,7 @@ def add_test_data(timeseries_data):
 
   files = os.listdir(test_data_cache_dir)
   for filename in files:
+    print("Processing tracing data: {}".format(filename))
     body = None
     with open(os.path.join(test_data_cache_dir, filename), 'rb') as f:
       body = f.read()
@@ -226,10 +227,13 @@ def add_test_data(timeseries_data):
     if fact_bar:
       confirmed = parse_num(fact_bar.select('.cases span')[0].text.strip())
       tested = parse_num(fact_bar.select('.tested span')[0].text.strip())
-      deaths = parse_num(fact_bar.select('.lost span')[0].text.strip())
       timeseries_data[date.strftime('%Y-%m-%d')]['confirmed'] = confirmed
       timeseries_data[date.strftime('%Y-%m-%d')]['tested'] = tested
-      timeseries_data[date.strftime('%Y-%m-%d')]['deaths'] = deaths
+
+      deaths_span = fact_bar.select('.lost span')
+      if deaths_span:
+        deaths = parse_num(deaths_span[0].text.strip())
+        timeseries_data[date.strftime('%Y-%m-%d')]['deaths'] = deaths
 
   return timeseries_data
 
