@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 import collections
 import copy
@@ -573,9 +573,9 @@ def add_manual_data(timeseries_data):
   sources = collections.defaultdict(lambda: 0)
   for date in sorted(events.keys()):
     event_data = events[date]
-    for k, v in event_data.get('age_groups', {}).iteritems():
+    for k, v in event_data.get('age_groups', {}).items():
       age_groups[k] += v
-    for k, v in event_data.get('sources', {}).iteritems():
+    for k, v in event_data.get('sources', {}).items():
       sources[k] += v
 
     # If there's no date in the timeseries data, there's no data for that day,

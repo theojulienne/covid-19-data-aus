@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 import collections
 import copy
@@ -66,7 +66,7 @@ def get_timeseries_data_from_power_bi():
     # If we got back no data, we're likely being 401'd (rate limited) - fall
     # back to the cache file
     if data == '':
-      print 'Empty response received - falling back to cache'
+      print('Empty response received - falling back to cache')
       data = json.loads(cache_request('data_cache/vic/powerbi.json', powerbi_request, force_cache=True))
 
     # Otherwise, if we successfully pulled data, update the day's cache file
@@ -75,7 +75,7 @@ def get_timeseries_data_from_power_bi():
       # handle timezones, but it's not going to be off by enough to actually
       # matter
       day = datetime.datetime.now() + datetime.timedelta(hours=10)
-      with open('data_cache/vic/%s_powerbi.snapshot.json' % day.strftime('%Y-%m-%d'), 'wb') as f:
+      with open('data_cache/vic/%s_powerbi.snapshot.json' % day.strftime('%Y-%m-%d'), 'w') as f:
         f.write(json.dumps(data))
 
   cases = uncompress_powerbi_response(data)
@@ -127,10 +127,10 @@ def get_timeseries_data_from_power_bi():
       timeseries_data[curr_key]['confirmed'] = 0
     timeseries_data[curr_key]['confirmed'] += timeseries_data[prev_key].get('confirmed', 0)
 
-    for k in set(timeseries_data[curr_key]['age_groups'].keys() + timeseries_data[prev_key]['age_groups'].keys()):
+    for k in set(timeseries_data[curr_key]['age_groups'].keys()) | set(timeseries_data[prev_key]['age_groups'].keys()):
       timeseries_data[curr_key]['age_groups'][k] += timeseries_data[prev_key]['age_groups'][k]
 
-    for s in set(timeseries_data[curr_key]['sources'].keys() + timeseries_data[prev_key]['sources'].keys()):
+    for s in set(timeseries_data[curr_key]['sources'].keys()) | set(timeseries_data[prev_key]['sources'].keys()):
       timeseries_data[curr_key]['sources'][s] += timeseries_data[prev_key]['sources'][s]
 
     prev_time = curr_time
@@ -274,7 +274,7 @@ def add_dhhs_release(timeseries_data, uri):
     date_keys.append('2020-04-16') # they missed this date, copy it.
 
   for date_key in date_keys:
-    print '{}: confirmed={}, tested={}, deaths={}, recovered={}, hospitalized={}, icu={}'.format(date_key, confirmed, tested, deaths, recovered, hospitalized, icu)
+    print('{}: confirmed={}, tested={}, deaths={}, recovered={}, hospitalized={}, icu={}'.format(date_key, confirmed, tested, deaths, recovered, hospitalized, icu))
     
     # We should always be able to get the number of people confirmed and tested
     if (tested is not None or date_key in ['2020-06-06', '2020-06-07', '2020-08-02']) and confirmed is not None:
