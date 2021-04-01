@@ -365,7 +365,7 @@ def cache_request(cache_filename, request, force_cache=False):
     with open(cache_filename, 'rb') as f:
       ret = f.read()
       # don't allow "pretend 404" pages
-      if 'We have publications on different health topics for you to access' not in ret:
+      if 'We have publications on different health topics for you to access' not in str(ret):
         return ret
 
   result = request()
