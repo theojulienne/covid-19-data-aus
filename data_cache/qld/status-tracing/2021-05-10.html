@@ -520,676 +520,921 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
     </ul>
     <li><a href="#datacaveats">Data caveats</a></li>
   </ul>
-</div><h3 id="vaccinationsummary">Vaccination summary</h3>
+</div>
+
+<style>
+    .vaccine-table th { padding: 1em;}
+	.vaccine-table tr[data-hhs] { cursor: pointer;}
+	.vaccine-table tr[data-hhs].expand .showdetail, 
+	.vaccine-table tr[data-hhs] .hidedetail { display:none;}
+	.vaccine-table tr[data-hhs].expand .hidedetail { display:inline-block;}
+	.vaccine-table tbody[data-hhs] { display:none;}
+	.vaccine-table tbody[data-hhs].expand { display:table-row-group;}
+	.vaccine-table .table tbody + tbody { 
+	    border-top: 0px;
+	}
+</style>
+<script>
+$(function(){
+    $('.vaccine-table').on('click','tr[data-hhs]', function(ev) {
+        var hhs = $(this).attr('data-hhs');
+        $(this).toggleClass('expand');
+        $('tbody[data-hhs="' + hhs + '"]').toggleClass('expand');
+    });
+});
+</script>
+<div class="vaccine-table" id="vaccination_summary_125472">
+<h3 id="vaccinationsummary">Vaccination summary</h3>
 <table class="table table-bordered">
 <thead><tr>
 <th>Vaccine site</th>
 <th>Doses administered 9 May 2021 </th>
 <th>Total doses administered</th>
 </tr></thead>
+
+
 <tbody>
+<tr data-hhs="Cairns and Hinterland">
+<th><i class="fa fa-plus showdetail"></i><i class="fa fa-minus hidedetail"></i> Cairns and Hinterland</th>
+<td>0</td>
+<td>14,010</td>
+</tr>
+</tbody>
+
+<tbody data-hhs="Cairns and Hinterland">
 
 <tr>
-<th>Atherton Hospital</th>
+<td>Atherton Hospital</td>
 <td>0</td>
 <td>499</td>
 </tr>
 
 <tr>
-<th>Cairns Hospital</th>
+<td>Cairns Hospital</td>
 <td>0</td>
 <td>12,884</td>
 </tr>
 
 <tr>
-<th>Cairns North</th>
+<td>Cairns North</td>
 <td>0</td>
 <td>8</td>
 </tr>
 
 <tr>
-<th>Innisfail Hospital</th>
+<td>Innisfail Hospital</td>
 <td>0</td>
 <td>288</td>
 </tr>
 
 <tr>
-<th>Mareeba Hospital</th>
+<td>Mareeba Hospital</td>
 <td>0</td>
 <td>317</td>
 </tr>
 
 <tr>
-<th>Cairns South Health Facility</th>
+<td>Cairns South Health Facility</td>
 <td>0</td>
 <td>14</td>
 </tr>
 
+</tbody>
+
+
+<tbody>
+<tr data-hhs="Central Queensland">
+<th><i class="fa fa-plus showdetail"></i><i class="fa fa-minus hidedetail"></i> Central Queensland</th>
+<td>0</td>
+<td>2,625</td>
+</tr>
+</tbody>
+
+<tbody data-hhs="Central Queensland">
+
 <tr>
-<th>Baralaba MPHS</th>
+<td>Baralaba MPHS</td>
 <td>0</td>
 <td>5</td>
 </tr>
 
 <tr>
-<th>Biloela Outreach</th>
+<td>Biloela Outreach</td>
 <td>0</td>
 <td>57</td>
 </tr>
 
 <tr>
-<th>Blackwater MPHS</th>
+<td>Blackwater MPHS</td>
 <td>0</td>
 <td>13</td>
 </tr>
 
 <tr>
-<th>Capricorn Coast Hospital</th>
+<td>Capricorn Coast Hospital</td>
 <td>0</td>
 <td>145</td>
 </tr>
 
 <tr>
-<th>Emerald Hospital</th>
+<td>Emerald Hospital</td>
 <td>0</td>
 <td>185</td>
 </tr>
 
 <tr>
-<th>Gladstone Hospital</th>
+<td>Gladstone Hospital</td>
 <td>0</td>
 <td>442</td>
 </tr>
 
 <tr>
-<th>Mount Morgan MPHS</th>
+<td>Mount Morgan MPHS</td>
 <td>0</td>
 <td>20</td>
 </tr>
 
 <tr>
-<th>Moura MPHS</th>
+<td>Moura MPHS</td>
 <td>0</td>
 <td>8</td>
 </tr>
 
 <tr>
-<th>Rockhampton Hospital</th>
+<td>Rockhampton Hospital</td>
 <td>0</td>
 <td>1,642</td>
 </tr>
 
 <tr>
-<th>Springsure MPHS</th>
+<td>Springsure MPHS</td>
 <td>0</td>
 <td>15</td>
 </tr>
 
 <tr>
-<th>Woorabinda MPHS</th>
+<td>Woorabinda MPHS</td>
 <td>0</td>
 <td>93</td>
 </tr>
 
+</tbody>
+
+
+<tbody>
+<tr data-hhs="Central West">
+<th><i class="fa fa-plus showdetail"></i><i class="fa fa-minus hidedetail"></i> Central West</th>
+<td>0</td>
+<td>2,981</td>
+</tr>
+</tbody>
+
+<tbody data-hhs="Central West">
+
 <tr>
-<th>Alpha Outreach</th>
+<td>Alpha Outreach</td>
 <td>0</td>
 <td>204</td>
 </tr>
 
 <tr>
-<th>Aramac Outreach</th>
+<td>Aramac Outreach</td>
 <td>0</td>
 <td>111</td>
 </tr>
 
 <tr>
-<th>Barcaldine Outreach</th>
+<td>Barcaldine Outreach</td>
 <td>0</td>
 <td>527</td>
 </tr>
 
 <tr>
-<th>Blackall Outreach</th>
+<td>Blackall Outreach</td>
 <td>0</td>
 <td>498</td>
 </tr>
 
 <tr>
-<th>Isisford Shire Hall</th>
+<td>Isisford Shire Hall</td>
 <td>0</td>
 <td>62</td>
 </tr>
 
 <tr>
-<th>Jericho Outreach</th>
+<td>Jericho Outreach</td>
 <td>0</td>
 <td>42</td>
 </tr>
 
 <tr>
-<th>Longreach Outreach</th>
+<td>Longreach Outreach</td>
 <td>0</td>
 <td>1,127</td>
 </tr>
 
 <tr>
-<th>Muttaburra Outreach</th>
+<td>Muttaburra Outreach</td>
 <td>0</td>
 <td>80</td>
 </tr>
 
 <tr>
-<th>Tambo Outreach</th>
+<td>Tambo Outreach</td>
 <td>0</td>
 <td>112</td>
 </tr>
 
 <tr>
-<th>Winton Outreach</th>
+<td>Winton Outreach</td>
 <td>0</td>
 <td>218</td>
 </tr>
 
+</tbody>
+
+
+<tbody>
+<tr data-hhs="Children's Health Queensland">
+<th><i class="fa fa-plus showdetail"></i><i class="fa fa-minus hidedetail"></i> Children's Health Queensland</th>
+<td>0</td>
+<td>1,842</td>
+</tr>
+</tbody>
+
+<tbody data-hhs="Children's Health Queensland">
+
 <tr>
-<th>Queensland Children's Hospital</th>
+<td>Queensland Children's Hospital</td>
 <td>0</td>
 <td>1,842</td>
 </tr>
 
+</tbody>
+
+
+<tbody>
+<tr data-hhs="Darling Downs">
+<th><i class="fa fa-plus showdetail"></i><i class="fa fa-minus hidedetail"></i> Darling Downs</th>
+<td>0</td>
+<td>4,461</td>
+</tr>
+</tbody>
+
+<tbody data-hhs="Darling Downs">
+
 <tr>
-<th>Baillie Henderson Hospital</th>
+<td>Baillie Henderson Hospital</td>
 <td>0</td>
 <td>1,265</td>
 </tr>
 
 <tr>
-<th>Chinchilla Hospital</th>
+<td>Chinchilla Hospital</td>
 <td>0</td>
 <td>90</td>
 </tr>
 
 <tr>
-<th>Dalby Hospital</th>
+<td>Dalby Hospital</td>
 <td>0</td>
 <td>145</td>
 </tr>
 
 <tr>
-<th>Goondiwindi Hospital</th>
+<td>Goondiwindi Hospital</td>
 <td>0</td>
 <td>92</td>
 </tr>
 
 <tr>
-<th>Kingaroy Hospital</th>
+<td>Kingaroy Hospital</td>
 <td>0</td>
 <td>187</td>
 </tr>
 
 <tr>
-<th>Miles Hospital</th>
+<td>Miles Hospital</td>
 <td>0</td>
 <td>101</td>
 </tr>
 
 <tr>
-<th>Murgon Hospital</th>
+<td>Murgon Hospital</td>
 <td>0</td>
 <td>43</td>
 </tr>
 
 <tr>
-<th>Stanthorpe Hospital</th>
+<td>Stanthorpe Hospital</td>
 <td>0</td>
 <td>143</td>
 </tr>
 
 <tr>
-<th>Toowoomba Hospital</th>
+<td>Toowoomba Hospital</td>
 <td>0</td>
 <td>2,025</td>
 </tr>
 
 <tr>
-<th>Warwick Hospital</th>
+<td>Warwick Hospital</td>
 <td>0</td>
 <td>370</td>
 </tr>
 
+</tbody>
+
+
+<tbody>
+<tr data-hhs="Gold Coast">
+<th><i class="fa fa-plus showdetail"></i><i class="fa fa-minus hidedetail"></i> Gold Coast</th>
+<td>0</td>
+<td>28,681</td>
+</tr>
+</tbody>
+
+<tbody data-hhs="Gold Coast">
+
 <tr>
-<th>Albert Waterways</th>
+<td>Albert Waterways</td>
 <td>0</td>
 <td>1,087</td>
 </tr>
 
 <tr>
-<th>Gold Coast University Hospital</th>
+<td>Gold Coast University Hospital</td>
 <td>0</td>
 <td>27,594</td>
 </tr>
 
+</tbody>
+
+
+<tbody>
+<tr data-hhs="Mackay">
+<th><i class="fa fa-plus showdetail"></i><i class="fa fa-minus hidedetail"></i> Mackay</th>
+<td>0</td>
+<td>2,252</td>
+</tr>
+</tbody>
+
+<tbody data-hhs="Mackay">
+
 <tr>
-<th>Bowen Hospital</th>
+<td>Bowen Hospital</td>
 <td>0</td>
 <td>65</td>
 </tr>
 
 <tr>
-<th>Clermont Hospital</th>
+<td>Clermont Hospital</td>
 <td>0</td>
 <td>15</td>
 </tr>
 
 <tr>
-<th>Collinsville MPF</th>
+<td>Collinsville MPF</td>
 <td>0</td>
 <td>22</td>
 </tr>
 
 <tr>
-<th>Dysart Hospital</th>
+<td>Dysart Hospital</td>
 <td>0</td>
 <td>29</td>
 </tr>
 
 <tr>
-<th>Mackay Base Hospital</th>
+<td>Mackay Base Hospital</td>
 <td>0</td>
 <td>1,915</td>
 </tr>
 
 <tr>
-<th>Moranbah Hospital</th>
+<td>Moranbah Hospital</td>
 <td>0</td>
 <td>27</td>
 </tr>
 
 <tr>
-<th>Proserpine Hospital</th>
+<td>Proserpine Hospital</td>
 <td>0</td>
 <td>116</td>
 </tr>
 
 <tr>
-<th>Sarina Hospital</th>
+<td>Sarina Hospital</td>
 <td>0</td>
 <td>63</td>
 </tr>
 
+</tbody>
+
+
+<tbody>
+<tr data-hhs="Mater Health Services">
+<th><i class="fa fa-plus showdetail"></i><i class="fa fa-minus hidedetail"></i> Mater Health Services</th>
+<td>0</td>
+<td>4,137</td>
+</tr>
+</tbody>
+
+<tbody data-hhs="Mater Health Services">
+
 <tr>
-<th>Mater Hospital Brisbane Public</th>
+<td>Mater Hospital Brisbane Public</td>
 <td>0</td>
 <td>3,887</td>
 </tr>
 
 <tr>
-<th>Mater Private Hospital Springfield</th>
+<td>Mater Private Hospital Springfield</td>
 <td>0</td>
 <td>250</td>
 </tr>
 
+</tbody>
+
+
+<tbody>
+<tr data-hhs="Metro North">
+<th><i class="fa fa-plus showdetail"></i><i class="fa fa-minus hidedetail"></i> Metro North</th>
+<td>0</td>
+<td>36,860</td>
+</tr>
+</tbody>
+
+<tbody data-hhs="Metro North">
+
 <tr>
-<th>Brighton Health Campus</th>
+<td>Brighton Health Campus</td>
 <td>0</td>
 <td>940</td>
 </tr>
 
 <tr>
-<th>Caboolture Hospital</th>
+<td>Caboolture Hospital</td>
 <td>0</td>
 <td>1,339</td>
 </tr>
 
 <tr>
-<th>Kilcoy Hospital</th>
+<td>Kilcoy Hospital</td>
 <td>0</td>
 <td>14</td>
 </tr>
 
 <tr>
-<th>Redcliffe Hospital</th>
+<td>Redcliffe Hospital</td>
 <td>0</td>
 <td>1,974</td>
 </tr>
 
 <tr>
-<th>Royal Brisbane &amp; Women's Hospital</th>
+<td>Royal Brisbane &amp; Women's Hospital</td>
 <td>0</td>
 <td>7,091</td>
 </tr>
 
 <tr>
-<th>Surgical, Treatment and Rehabilitation Service (RBWH/Herston Campus)</th>
+<td>Surgical, Treatment and Rehabilitation Service (RBWH/Herston Campus)</td>
 <td>0</td>
 <td>22,373</td>
 </tr>
 
 <tr>
-<th>The Prince Charles Hospital</th>
+<td>The Prince Charles Hospital</td>
 <td>0</td>
 <td>3,129</td>
 </tr>
 
+</tbody>
+
+
+<tbody>
+<tr data-hhs="Metro South">
+<th><i class="fa fa-plus showdetail"></i><i class="fa fa-minus hidedetail"></i> Metro South</th>
+<td>0</td>
+<td>24,800</td>
+</tr>
+</tbody>
+
+<tbody data-hhs="Metro South">
+
 <tr>
-<th>Beaudesert Hospital</th>
+<td>Beaudesert Hospital</td>
 <td>0</td>
 <td>48</td>
 </tr>
 
 <tr>
-<th>Logan Hospital</th>
+<td>Logan Hospital</td>
 <td>0</td>
 <td>2,169</td>
 </tr>
 
 <tr>
-<th>Palen Creek Offender Health Service</th>
+<td>Palen Creek Offender Health Service</td>
 <td>0</td>
 <td>72</td>
 </tr>
 
 <tr>
-<th>Princess Alexandra Hospital</th>
+<td>Princess Alexandra Hospital</td>
 <td>0</td>
 <td>18,690</td>
 </tr>
 
 <tr>
-<th>QEII Hospital</th>
+<td>QEII Hospital</td>
 <td>0</td>
 <td>2,680</td>
 </tr>
 
 <tr>
-<th>Redland Hospital</th>
+<td>Redland Hospital</td>
 <td>0</td>
 <td>1,141</td>
 </tr>
 
+</tbody>
+
+
+<tbody>
+<tr data-hhs="North West">
+<th><i class="fa fa-plus showdetail"></i><i class="fa fa-minus hidedetail"></i> North West</th>
+<td>0</td>
+<td>952</td>
+</tr>
+</tbody>
+
+<tbody data-hhs="North West">
+
 <tr>
-<th>Burketown Council Community Centre</th>
+<td>Burketown Council Community Centre</td>
 <td>0</td>
 <td>52</td>
 </tr>
 
 <tr>
-<th>Cloncurry MPHS</th>
+<td>Cloncurry MPHS</td>
 <td>0</td>
 <td>17</td>
 </tr>
 
 <tr>
-<th>Mount Isa Base Hospital</th>
+<td>Mount Isa Base Hospital</td>
 <td>0</td>
 <td>883</td>
 </tr>
 
+</tbody>
+
+
+<tbody>
+<tr data-hhs="South West">
+<th><i class="fa fa-plus showdetail"></i><i class="fa fa-minus hidedetail"></i> South West</th>
+<td>0</td>
+<td>1,286</td>
+</tr>
+</tbody>
+
+<tbody data-hhs="South West">
+
 <tr>
-<th>Augathella MPHS</th>
+<td>Augathella MPHS</td>
 <td>0</td>
 <td>35</td>
 </tr>
 
 <tr>
-<th>Bollon Community Clinic</th>
+<td>Bollon Community Clinic</td>
 <td>0</td>
 <td>68</td>
 </tr>
 
 <tr>
-<th>Charleville Hospital</th>
+<td>Charleville Hospital</td>
 <td>0</td>
 <td>306</td>
 </tr>
 
 <tr>
-<th>Cunnamulla MPHS</th>
+<td>Cunnamulla MPHS</td>
 <td>0</td>
 <td>18</td>
 </tr>
 
 <tr>
-<th>Dirranbandi MPHS</th>
+<td>Dirranbandi MPHS</td>
 <td>0</td>
 <td>80</td>
 </tr>
 
 <tr>
-<th>Injune MPHS</th>
+<td>Injune MPHS</td>
 <td>0</td>
 <td>80</td>
 </tr>
 
 <tr>
-<th>Mitchell MPHS</th>
+<td>Mitchell MPHS</td>
 <td>0</td>
 <td>22</td>
 </tr>
 
 <tr>
-<th>Mungindi MPHS</th>
+<td>Mungindi MPHS</td>
 <td>0</td>
 <td>16</td>
 </tr>
 
 <tr>
-<th>Quilpie MPHS</th>
+<td>Quilpie MPHS</td>
 <td>0</td>
 <td>40</td>
 </tr>
 
 <tr>
-<th>Roma Hospital</th>
+<td>Roma Hospital</td>
 <td>0</td>
 <td>327</td>
 </tr>
 
 <tr>
-<th>St George Hospital</th>
+<td>St George Hospital</td>
 <td>0</td>
 <td>189</td>
 </tr>
 
 <tr>
-<th>Surat Outreach</th>
+<td>Surat Outreach</td>
 <td>0</td>
 <td>63</td>
 </tr>
 
 <tr>
-<th>Thargomindah Community Clinic</th>
+<td>Thargomindah Community Clinic</td>
 <td>0</td>
 <td>37</td>
 </tr>
 
 <tr>
-<th>Wallumbilla Outreach</th>
+<td>Wallumbilla Outreach</td>
 <td>0</td>
 <td>5</td>
 </tr>
 
+</tbody>
+
+
+<tbody>
+<tr data-hhs="Sunshine Coast">
+<th><i class="fa fa-plus showdetail"></i><i class="fa fa-minus hidedetail"></i> Sunshine Coast</th>
+<td>0</td>
+<td>13,093</td>
+</tr>
+</tbody>
+
+<tbody data-hhs="Sunshine Coast">
+
 <tr>
-<th>Caloundra Hospital</th>
+<td>Caloundra Hospital</td>
 <td>0</td>
 <td>71</td>
 </tr>
 
 <tr>
-<th>Gympie Hospital</th>
+<td>Gympie Hospital</td>
 <td>0</td>
 <td>291</td>
 </tr>
 
 <tr>
-<th>Maleny Hospital</th>
+<td>Maleny Hospital</td>
 <td>0</td>
 <td>23</td>
 </tr>
 
 <tr>
-<th>Nambour Hospital</th>
+<td>Nambour Hospital</td>
 <td>0</td>
 <td>885</td>
 </tr>
 
 <tr>
-<th>Sunshine Coast University Hospital</th>
+<td>Sunshine Coast University Hospital</td>
 <td>0</td>
 <td>11,823</td>
 </tr>
 
+</tbody>
+
+
+<tbody>
+<tr data-hhs="Torres and Cape">
+<th><i class="fa fa-plus showdetail"></i><i class="fa fa-minus hidedetail"></i> Torres and Cape</th>
+<td>0</td>
+<td>884</td>
+</tr>
+</tbody>
+
+<tbody data-hhs="Torres and Cape">
+
 <tr>
-<th>Boigu Island Outreach</th>
+<td>Boigu Island Outreach</td>
 <td>0</td>
 <td>158</td>
 </tr>
 
 <tr>
-<th>Dauan Island Outreach</th>
+<td>Dauan Island Outreach</td>
 <td>0</td>
 <td>73</td>
 </tr>
 
 <tr>
-<th>Hammond Island Outreach</th>
+<td>Hammond Island Outreach</td>
 <td>0</td>
 <td>91</td>
 </tr>
 
 <tr>
-<th>Horn Island Outreach</th>
+<td>Horn Island Outreach</td>
 <td>0</td>
 <td>109</td>
 </tr>
 
 <tr>
-<th>Saibai Island Outreach</th>
+<td>Saibai Island Outreach</td>
 <td>0</td>
 <td>173</td>
 </tr>
 
 <tr>
-<th>Thursday Island Outreach</th>
+<td>Thursday Island Outreach</td>
 <td>0</td>
 <td>280</td>
 </tr>
 
+</tbody>
+
+
+<tbody>
+<tr data-hhs="Townsville">
+<th><i class="fa fa-plus showdetail"></i><i class="fa fa-minus hidedetail"></i> Townsville</th>
+<td>0</td>
+<td>12,858</td>
+</tr>
+</tbody>
+
+<tbody data-hhs="Townsville">
+
 <tr>
-<th>Charters Towers Outreach</th>
+<td>Charters Towers Outreach</td>
 <td>0</td>
 <td>112</td>
 </tr>
 
 <tr>
-<th>Hughenden MPHC</th>
+<td>Hughenden MPHC</td>
 <td>0</td>
 <td>425</td>
 </tr>
 
 <tr>
-<th>Richmond MPHS</th>
+<td>Richmond MPHS</td>
 <td>0</td>
 <td>271</td>
 </tr>
 
 <tr>
-<th>Townsville University Hospital</th>
+<td>Townsville University Hospital</td>
 <td>0</td>
 <td>11,942</td>
 </tr>
 
 <tr>
-<th>Ayr Hospital</th>
+<td>Ayr Hospital</td>
 <td>0</td>
 <td>54</td>
 </tr>
 
 <tr>
-<th>Ingham Hospital</th>
+<td>Ingham Hospital</td>
 <td>0</td>
 <td>54</td>
 </tr>
 
+</tbody>
+
+
+<tbody>
+<tr data-hhs="West Moreton">
+<th><i class="fa fa-plus showdetail"></i><i class="fa fa-minus hidedetail"></i> West Moreton</th>
+<td>0</td>
+<td>2,404</td>
+</tr>
+</tbody>
+
+<tbody data-hhs="West Moreton">
+
 <tr>
-<th>Gatton Hospital</th>
+<td>Gatton Hospital</td>
 <td>0</td>
 <td>49</td>
 </tr>
 
 <tr>
-<th>The Park for Mental Health</th>
+<td>The Park for Mental Health</td>
 <td>0</td>
 <td>130</td>
 </tr>
 
 <tr>
-<th>Ipswich Hospital (including Cribb House)</th>
+<td>Ipswich Hospital (including Cribb House)</td>
 <td>0</td>
 <td>2,225</td>
 </tr>
 
+</tbody>
+
+
+<tbody>
+<tr data-hhs="Wide Bay">
+<th><i class="fa fa-plus showdetail"></i><i class="fa fa-minus hidedetail"></i> Wide Bay</th>
+<td>0</td>
+<td>3,038</td>
+</tr>
+</tbody>
+
+<tbody data-hhs="Wide Bay">
+
 <tr>
-<th>Biggenden Outreach</th>
+<td>Biggenden Outreach</td>
 <td>0</td>
 <td>21</td>
 </tr>
 
 <tr>
-<th>Bundaberg Hospital</th>
+<td>Bundaberg Hospital</td>
 <td>0</td>
 <td>1,384</td>
 </tr>
 
 <tr>
-<th>Childers Outreach</th>
+<td>Childers Outreach</td>
 <td>0</td>
 <td>18</td>
 </tr>
 
 <tr>
-<th>Eidsvold Outreach</th>
+<td>Eidsvold Outreach</td>
 <td>0</td>
 <td>20</td>
 </tr>
 
 <tr>
-<th>Gayndah Outreach</th>
+<td>Gayndah Outreach</td>
 <td>0</td>
 <td>28</td>
 </tr>
 
 <tr>
-<th>Gin Gin Outreach</th>
+<td>Gin Gin Outreach</td>
 <td>0</td>
 <td>17</td>
 </tr>
 
 <tr>
-<th>Hervey Bay Hospital</th>
+<td>Hervey Bay Hospital</td>
 <td>0</td>
 <td>908</td>
 </tr>
 
 <tr>
-<th>Maryborough Hospital</th>
+<td>Maryborough Hospital</td>
 <td>0</td>
 <td>603</td>
 </tr>
 
 <tr>
-<th>Monto Outreach</th>
+<td>Monto Outreach</td>
 <td>0</td>
 <td>19</td>
 </tr>
 
 <tr>
-<th>Mundubbera Outreach</th>
+<td>Mundubbera Outreach</td>
 <td>0</td>
 <td>20</td>
 </tr>
 
 </tbody>
+
+
+
 
 <tfoot>
 <tr>
@@ -1201,6 +1446,8 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 </tfoot>
 <caption>Data as at 10/05/2021. Refer to <a href="#caveat-vaccination">data caveats</a></caption>
 </table>
+
+</div>
 <h3 id="casesummary">Case summary</h3><table id="QLD_Cases" class="table table-bordered">
 <thead><tr>
 <th>Cases</th>
@@ -2551,12 +2798,12 @@ if (viewport) viewport.setAttribute('content',"width=device-width, initial-scale
             <h3>Contact us</h3>
 <p>For general enquiries, feedback, complaints and compliments:</p>
 <ul>
-    <li class="phone"><span>13 QGOV (<a href="tel:137468" class="d-inline d-sm-none" data-analytics-link-group="qg-contact-phone">13 74 68</a><span class="d-none d-sm-inline">13 74 68</span>)</span></li>
-    <li>For COVID-19 related enquiries:</li>
-    <li class="phone"><span>134 COVID (<a href="tel:134268" class="d-inline d-sm-none" data-analytics-link-group="qg-contact-phone">13 42 68</a><span class="d-none d-sm-inline">13 42 68</span>)</span></li>
+    <li>Get in touch for enquiries, feedback, complaints and compliments: <p class="phone"><span>13 QGOV (<a href="tel:137468" class="d-inline d-sm-none" data-analytics-link-group="qg-contact-phone">13 74 68</a><span class="d-none d-sm-inline">13 74 68</span>)</span></p></li>
+    <li>For COVID-19 related enquiries: <p class="phone"><span>134 COVID (<a href="tel:134268" class="d-inline d-sm-none" data-analytics-link-group="qg-contact-phone">13 42 68</a><span class="d-none d-sm-inline">13 42 68</span>)</span></p></li>
     <li class="facebook"><a href="https://www.facebook.com/QueenslandGovernment/" aria-label="Facebook /QueenslandGovernment" data-analytics-link-group="qg-contact-facebook">/QueenslandGovernment</a></li>
     <li class="twitter"><a href="https://twitter.com/qldgov" aria-label="Twitter @QldGov" data-analytics-link-group="qg-contact-twitter">@QldGov</a></li>
 </ul>
+
 
 <a class="btn btn-global-secondary" accesskey="4" href="https://www.qld.gov.au/contact-us" data-analytics-link-group="qg-contact-other">Other contact options</a>
 
@@ -2733,6 +2980,6 @@ if (viewport) viewport.setAttribute('content',"width=device-width, initial-scale
     <!-- endnoindex -->
 
 
-<script async type="text/javascript" src="/_Incapsula_Resource?SWJIYLWA=719d34d31c8e3a6e6fffd425f7e032f3&ns=1&cb=531382464"></script>
+<script async type="text/javascript" src="/_Incapsula_Resource?SWJIYLWA=719d34d31c8e3a6e6fffd425f7e032f3&ns=1&cb=372169457"></script>
 </body>
 </html>
