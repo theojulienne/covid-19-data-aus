@@ -99,12 +99,16 @@ def get_timeseries_data(urls):
         for t in tables:
           parsed_table = parse_table(t)
 
+          if len(parsed_table['headers']) == 0:
+            print("WARNING: invalid table")
+            continue
+
           if 'Confirmed cases' in parsed_table['headers'][0]:
             parsed_table['data'] = [parsed_table['headers']] + parsed_table['data']
             parsed_table['data'][0][-1] = parse_datum(clean_text(parsed_table['data'][0][-1]))
             parsed_table['headers'] = ['Cases', 'Count']
 
-          if parsed_table['headers'][0] in 'Cases':
+          if parsed_table['headers'][0] in ('', 'Cases', 'Updates', 'Status'):
             confirmed, tested, deaths, recovered = process_overall_table(parsed_table)
 
           elif parsed_table['headers'][0].lower() == 'age group':
@@ -124,7 +128,8 @@ def get_timeseries_data(urls):
             pass
 
           else:
-            raise Exception('Unknown table in %s! %s' % (cache_filename, repr(parsed_table['headers'])))
+            print('WARNING: Unknown table in %s! %s' % (cache_filename, repr(parsed_table['headers'])))
+            continue
 
         body = soup.select_one('div.maincontent').text
         hospitalized, icu, ventilators = parse_full_body(body)
