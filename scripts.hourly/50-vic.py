@@ -267,7 +267,27 @@ def add_dhhs_release(timeseries_data, uri):
   body = layout_region.select_one('div.page-content').text.strip()
 
   confirmed, tested, deaths, recovered, hospitalized, icu = parse_fulltext_post(body)
+
+  meta = {}
+  for table in layout_region.select('table'):
+    headers = list(th.text.strip() for th in table.select('th'))
+    values = list(td.text.strip() for td in table.select('td'))
+    meta.update(dict(zip(headers, values)))
+
+  if tested is None and 'Total tests since pandemic began' in meta:
+    tested = parse_num(meta['Total tests since pandemic began'])
   
+  if confirmed is None:
+    values = []
+    for k, v in meta.items():
+      if k.startswith('Cases acquired'):
+        values.append(parse_num(v))
+    if len(values) > 0:
+      confirmed = sum(values)
+
+  if deaths is None and 'Lives lost' in meta:
+    deaths = parse_num(meta['Lives lost'])
+
   date_key = date.strftime('%Y-%m-%d')
   date_keys = [date_key]
   if date_key == '2020-04-15':
@@ -299,7 +319,7 @@ def add_dhhs_release(timeseries_data, uri):
 
 def add_historical_data(timeseries_data):
   historical_releases = bs4.BeautifulSoup(
-    requests.get('https://www2.health.vic.gov.au/about/media-centre/mediareleases/?q=&ps=100&pn=1&s=relevance&i=&f=&n=&e=&a=&ac=&df=&dt=&l=&lq=').text,
+    requests.get('https://www2.health.vic.gov.au/about/media-centre/mediareleases/?q=&ps=100&pn=1&s=relevance&i=&f=&n=&e=&a=&ac=&df=&dt=&l=&lq=', verify=False).text,
     'html.parser'
   )
 
@@ -377,9 +397,9 @@ def fill_in_blank_data(timeseries_data):
 
 def parse_fulltext_post(body):
   body = body.replace(u'\xa0', ' ')
-
+  
   confirmed = None
-  m = re.match(r'.*total number of (?:coronavirus \(COVID-19\) )?cases (in Victoria|increased|now) (is|to|at) (?P<confirmed>[\d,]+).*', body, re.MULTILINE | re.DOTALL)
+  m = re.match(r'.*total number of [a-zA-Z ]*cases[a-zA-Z ]* (is|to|at) (?P<confirmed>[\d,]+).*', body, re.MULTILINE | re.DOTALL)
   if not m:
     m = re.match(r'.*Of the total (?P<confirmed>[\d,]+) cases.*', body, re.MULTILINE | re.DOTALL)
   if m:
