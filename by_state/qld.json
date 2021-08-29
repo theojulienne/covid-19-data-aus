@@ -11076,8 +11076,8 @@
       null,
       null,
       21,
-      null,
-      null,
+      24,
+      21,
       null
     ],
     "current_icu": [
@@ -11658,8 +11658,8 @@
       null,
       null,
       2,
-      null,
-      null,
+      2,
+      0,
       null
     ],
     "deaths": [
