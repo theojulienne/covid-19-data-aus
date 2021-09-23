@@ -227,7 +227,7 @@ def process_source_table(table):
       overseas = r[-1]
     elif 'contact of a confirmed case' in cleaned_r0 or 'contact of aconfirmed case' in cleaned_r0 or 'Epi link' in cleaned_r0 or 'Locally acquired linked' in cleaned_r0:
       contact = r[-1]
-    elif 'not identified' in cleaned_r0 or 'Unknown' in cleaned_r0 or 'Locally acquired no links' in cleaned_r0:
+    elif 'not identified' in cleaned_r0 or 'Unknown' in cleaned_r0 or 'Locally acquired no links' in cleaned_r0 or cleaned_r0 == 'Locally acquired':
       community = r[-1]
     elif 'investigation' in cleaned_r0:
       investigation = r[-1]
