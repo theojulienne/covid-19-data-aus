@@ -225,7 +225,7 @@ def add_test_data(timeseries_data):
     # And finally, the shiny new fact page that has useful information
     fact_bar = content.select_one('.qh-fact-wrapper')
     if fact_bar:
-      cases_bits = fact_bar.select('.cases span') + fact_bar.select('.local span')
+      cases_bits = fact_bar.select('.cases span') + fact_bar.select('.local span') + fact_bar.select('.new span')
       confirmed = parse_num(cases_bits[0].text.strip())
       tested = parse_num(fact_bar.select('.tested span')[0].text.strip())
       timeseries_data[date.strftime('%Y-%m-%d')]['confirmed'] = confirmed
