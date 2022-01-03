@@ -318,29 +318,6 @@ def add_dhhs_release(timeseries_data, uri):
   return timeseries_data
 
 def add_historical_data(timeseries_data):
-  historical_releases = bs4.BeautifulSoup(
-    requests.get('https://www2.health.vic.gov.au/about/media-centre/mediareleases/?q=&ps=100&pn=1&s=relevance&i=&f=&n=&e=&a=&ac=&df=&dt=&l=&lq=', verify=False).text,
-    'html.parser'
-  )
-
-  release_list = historical_releases.select_one('ol.listing')
-  for li in release_list.select('li'):
-    href = li.select_one('a').attrs['href']
-    if href[0] == '/':
-      href = 'https://www2.health.vic.gov.au' + href
-
-    title = li.select_one('h3').text
-
-    # We do not care about "Poisonous Mushrooms sprouting early" this time
-    if 'COVID-19' not in title and 'coronavirus' not in title.lower():
-      continue
-
-    uri = '_' + '_'.join(href.split('/')[3:])
-    response_body = cache_request(
-      'data_cache/vic/historical/' + uri.replace('/', '_') + '.html',
-      lambda: requests.get(href).text,
-    )
-
   for basename in os.listdir('data_cache/vic/historical'):
     response_body = cache_request(
       'data_cache/vic/historical/' + basename,
