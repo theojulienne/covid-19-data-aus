@@ -207,6 +207,8 @@ def normalize_source(source):
   }.get(source, None)
 
 def add_recent_data(timeseries_data):
+  timeseries_data = add_health_news_feed(timeseries_data)
+
   recent_releases = bs4.BeautifulSoup(requests.get('https://www.dhhs.vic.gov.au/media-hub-coronavirus-disease-covid-19').text, 'html.parser')
   page_body = recent_releases.select_one('div.page-content')
 
@@ -229,7 +231,58 @@ def add_recent_data(timeseries_data):
   
   timeseries_data = add_dhhs_release(timeseries_data, '/coronavirus-update-victoria-24-april-2020')
   timeseries_data = add_dhhs_release(timeseries_data, '/coronavirus-update-victoria-21-may-2020')
+
   return timeseries_data
+
+def add_health_news_feed(timeseries_data):
+  data = '{"from":0,"size":200,"_source":[],"query":{"bool":{"filter":[{"terms":{"field_node_site":["4"]}},{"terms":{"type":["news"]}},{"terms":{"field_topic":["Media Releases"]}}],"must_not":[{"match":{"nid":11743}}]}},"sort":[{"field_news_date":"desc"}],"aggs":{"field_node_year":{"terms":{"field":"field_node_year","order":{"_key":"desc"},"size":30}}}}'
+  new_items = requests.post('https://www.health.vic.gov.au/search-api/v2/dsl', data=data, headers={
+    'Content-Type': 'application/json',
+  })
+
+  for item in new_items.json()['hits']['hits']:
+    date = item['_source']['field_news_date'][0].split('T')[0]
+    url = item['_source']['url'][0]
+    body = item['_source']['body'][0]
+    print(date, url, body[:100])
+    if 'coronavirus' not in url: continue
+    timeseries_data = add_health_with_date_body(timeseries_data, date, body)
+  
+  return timeseries_data
+
+def add_health_with_date_body(timeseries_data, date, body):
+  confirmed, tested, deaths, recovered, hospitalized, icu = parse_fulltext_post(body)
+
+  date_key = date
+  date_keys = [date_key]
+  if date_key == '2020-04-15':
+    date_keys.append('2020-04-16') # they missed this date, copy it.
+
+  for date_key in date_keys:
+    print('{}: confirmed={}, tested={}, deaths={}, recovered={}, hospitalized={}, icu={}'.format(date_key, confirmed, tested, deaths, recovered, hospitalized, icu))
+    
+    # We should always be able to get the number of people confirmed and tested
+    if (tested is not None or date_key in ['2020-06-06', '2020-06-07', '2020-08-02']) and confirmed is not None:
+      timeseries_data[date_key]['tested'] = tested
+      # We overwrite the summed individual cases here, if we have an official
+      # media release
+      timeseries_data[date_key]['confirmed'] = confirmed
+    else:
+      print('WARNING: Trouble parsing! (confirmed={}, tested={}, deaths={}, recovered={}, hospitalized={}, icu={})'.format(confirmed, tested, deaths, recovered, hospitalized, icu))
+      print(repr(body))
+      return timeseries_data
+
+    if deaths is not None:
+      timeseries_data[date_key]['deaths'] = deaths
+    if recovered is not None:
+      timeseries_data[date_key]['recovered'] = recovered
+    if hospitalized is not None:
+      timeseries_data[date_key]['hospitalized'] = hospitalized
+    if icu is not None:
+      timeseries_data[date_key]['icu'] = icu
+
+  return timeseries_data
+
 
 def add_dhhs_release(timeseries_data, uri):
   href = 'https://www.dhhs.vic.gov.au' + uri
@@ -372,23 +425,37 @@ def fill_in_blank_data(timeseries_data):
 
   return timeseries_data
 
+def match_first(body, patterns):
+  for p in patterns:
+    m = re.match(p, body, re.MULTILINE | re.DOTALL)
+    if m:
+      return m
+
 def parse_fulltext_post(body):
   body = body.replace(u'\xa0', ' ')
   
   confirmed = None
-  m = re.match(r'.*total number of [a-zA-Z ]*cases[a-zA-Z ]* (is|to|at) (?P<confirmed>[\d,]+).*', body, re.MULTILINE | re.DOTALL)
+  m = re.match(r'.*confirmed cases in Victoria since the beginning of the pandemic is (?P<confirmed>[\d,]+).*', body, re.MULTILINE | re.DOTALL)
+  if not m:
+    m = re.match(r'.*total number of [a-zA-Z ]*cases[a-zA-Z ]* (is|to|at) (?P<confirmed>[\d,]+).*', body, re.MULTILINE | re.DOTALL)
   if not m:
     m = re.match(r'.*Of the total (?P<confirmed>[\d,]+) cases.*', body, re.MULTILINE | re.DOTALL)
   if m:
     confirmed = parse_num(m.group('confirmed'))
 
   tested = None
-  m = re.match(r'.* (?P<tested>[\d,]+) (Victorians have been tested to date|(swabs|tests|test results) have been (conducted|processed|completed|undertaken|taken|received)).*', body, re.MULTILINE | re.DOTALL)
+  m = match_first(body, [
+    r'.*Total tests since pandemic began (?P<tested>[\d,]+).*',
+    r'.*The total number of tests performed in Victoria since the pandemic began is (?P<tested>[\d,]+).*',
+    r'.* (?P<tested>[\d,]+) (Victorians have been tested to date|(swabs|tests|test results) have been (conducted|processed|completed|undertaken|taken|received)).*',
+  ])
   if m:
     tested = parse_num(m.group('tested'))
 
   deaths = None
-  m = re.match(r'.*Victoria has(?: now)? recorded(?: its first)? (?P<deaths>\w+) deaths related to (?:coronavirus|COVID-19).*', body, re.MULTILINE | re.DOTALL)
+  m = re.match(r'This brings the total number of deaths in Victoria since the pandemic began to (?P<deaths>\w+)', body, re.MULTILINE | re.DOTALL)
+  if not m:
+    m = re.match(r'.*Victoria has(?: now)? recorded(?: its first)? (?P<deaths>\w+) deaths related to (?:coronavirus|COVID-19).*', body, re.MULTILINE | re.DOTALL)
   if m:
     deaths = parse_num(m.group('deaths'))
   else:
